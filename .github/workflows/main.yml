@@ -29,7 +29,7 @@ jobs:
     - name: Lint with flake8
       run: |
         pip install flake8
-        flake8 FileFinder_19/*.py
+        flake8 .
 
     - name: Run Scripts
       run: |
@@ -40,8 +40,10 @@ jobs:
     - name: Run PowerShell Script
       run: pwsh PowerShell/PS__ArunV2_Final_8Feb2024.ps1
 
+    - name: Install PostgreSQL
+      run: choco install postgresql
+
     - name: Run SQL Scripts
       run: |
-        choco install postgresql
         psql -f SQLScripts/lisney_files_info8_bp_14Feb2024.sql
         psql -f SQLScripts/sql_Cased_Dimensions14Jan2024_v2.sql
