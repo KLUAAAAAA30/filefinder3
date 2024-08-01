@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - name: Checkout repository
@@ -42,6 +42,6 @@ jobs:
 
     - name: Run SQL Scripts
       run: |
-        sudo apt-get install -y postgresql
+        choco install postgresql
         psql -f SQLScripts/lisney_files_info8_bp_14Feb2024.sql
         psql -f SQLScripts/sql_Cased_Dimensions14Jan2024_v2.sql
