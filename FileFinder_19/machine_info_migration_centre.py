@@ -15,7 +15,7 @@ username = os.getenv("MYSQL_USERNAME")
 password = os.getenv("MYSQL_PASSWORD")  # Ensure password is loaded from the environment
 
 # Read the Excel file
-df = pd.read_excel("pc_data_info.xlsx")
+df = pd.read_excel("FileFinder_19/pc_data_info.xlsx")
 
 # Filter the DataFrame based on the "groupType" column
 df_assessment = df[df["groupType"] == "Assessment"]
