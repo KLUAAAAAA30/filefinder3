@@ -54,10 +54,14 @@ for key, count in aggregated_results.items():
     })
 
 # Specify the location to save the CSV file
-csv_file = f"FileTypeCounts_{run_date}.csv"  # Define the csv_file variable
+csv_file = f"FileTypeCounts_{run_date}.csv"
 
-# Export the results to CSV
-with open(csv_file, mode='w', newline='', encoding='utf-8') as file:
-    writer = csv.DictWriter(file, fieldnames=final_results[0].keys())
-    writer.writeheader()
-    writer.writerows(final_results)
+# Check if final_results is not empty before writing to CSV
+if final_results:
+    # Export the results to CSV
+    with open(csv_file, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.DictWriter(file, fieldnames=final_results[0].keys())
+        writer.writeheader()
+        writer.writerows(final_results)
+else:
+    print("No files found. CSV file not created.")
