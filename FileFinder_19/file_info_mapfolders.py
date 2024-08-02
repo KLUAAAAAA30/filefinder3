@@ -12,9 +12,11 @@ results = []
 # Get the run date
 run_date = datetime.now().strftime("%Y-%m-%d")
 
+
 # Function to get file extension
 def get_extension(file_name):
     return file_name.split('.')[-1] if '.' in file_name else 'No Extension'
+
 
 for drive in drives:
     for root, dirs, files in os.walk(drive, topdown=True):
@@ -37,7 +39,8 @@ for drive in drives:
 # Aggregate results
 aggregated_results = defaultdict(int)
 for result in results:
-    key = (result['FileType'], result['Extension'], result['RunDate'], result['ServerName'], result['Drive'])
+    key = (result['FileType'], result['Extension'], result['RunDate'],
+           result['ServerName'], result['Drive'])
     aggregated_results[key] += 1
 
 # Convert aggregated results to list of dictionaries
@@ -53,7 +56,7 @@ for key, count in aggregated_results.items():
     })
 
 # Specify the location to save the CSV file
-csv_file = f"C:/GT/FileTypeCounts_{run_date}.csv"  # Update with your path
+csv_file = f"FileTypeCounts_{run_date}.csv"  # Define the csv_file variable
 
 # Export the results to CSV
 with open(csv_file, mode='w', newline='', encoding='utf-8') as file:
