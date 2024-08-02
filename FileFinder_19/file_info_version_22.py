@@ -153,34 +153,117 @@ def get_ip_address():
         return None
 
 
-def get_removable_drives():
-    """
-    This is a function that checks for the modified days of a file.
-    Return modified or not modified - true or false
+from dotenv import load_dotenv
+import os
+import mysql.connector
+from mysql.connector import Error
+import platform
+import subprocess
+import socket
+from rich import print
+from rich.console import Console
 
-    Args:
-        file_path (int): file path
-        n_days (int): days modified from the env file
+console = Console()
+logger = console.log
 
-    Returns:
-        boolean: true or false
-    """
-    removable_drives = []
-    # Refactor the below piece of code
+load_dotenv()
+
+# Variables that can be fetched from database or .env
+d_file_details_file_extensions = "test"
+sensitive_patterns = "test"
+is_sensitive_file_extensions = "test"
+enable_file_ext_count_in_scan = "test"
+enable_excel_file_data_scan = "test"
+enable_excel_file_data_scan_min_row = 3
+n_days = 0
+
+# Remove default logger
+logger.remove()
+
+def create_db_connection(host, port, database_name, username, password):
     try:
-        for partition in psutil.disk_partitions():
-            try:
-                if 'removable' in partition.opts or 'cdrom' in partition.opts:
-                    removable_drives.append(partition.device)
-            except Exception as inner_exception:
-                print(
-                    f"An error occurred while processing partition {partition.device}:"
-                    f"{inner_exception}"
-                )
-    except Exception as outer_exception:
-        print(f"Error get_removable_drives: {outer_exception}")
+        connection = mysql.connector.connect(
+            host=host,
+            port=port,
+            database=database_name,
+            user=username,
+            password=password
+        )
 
-    return removable_drives
+        if connection.is_connected():
+            print("[bright_green]Database connection is completed[/bright_green]")
+            logger.success("Database connection is completed")
+            return connection
+        else:
+            logger.error("Error getting Database connection")
+
+    except Error as e:
+        print(f"Error getting Database connection: {str(e)}")
+        logger.error(f"Error getting Database connection: {str(e)}")
+        return None
+
+def retrieve_env_values(enable_env_from_db, connection):
+    if enable_env_from_db.lower() == 'true':
+        get_values_from_db(connection)
+    else:
+        get_values_from_env()
+
+def get_values_from_db(connection):
+    global d_file_details_file_extensions, sensitive_patterns, is_sensitive_file_extensions
+    global enable_file_ext_count_in_scan, enable_excel_file_data_scan, enable_excel_file_data_scan_min_row, n_days
+
+    try:
+        cursor = connection.cursor()
+        query = "SELECT env_key, env_value FROM env_info"
+        cursor.execute(query)
+        config_values = {env_key: env_value for env_key, env_value in cursor}
+
+        d_file_details_file_extensions = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
+        sensitive_patterns = config_values.get("FILE_PATH_SCAN_SENSITIVE_PATTERNS")
+        is_sensitive_file_extensions = config_values.get("IS_SENSITIVE_FILE_EXTENSIONS")
+        enable_file_ext_count_in_scan = config_values.get("ENABLE_FILE_EXT_COUNT_IN_SCAN")
+        enable_excel_file_data_scan = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN")
+        enable_excel_file_data_scan_min_row = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
+        n_days = config_values.get("N_DAYS")
+
+        cursor.close()
+    except Error as e:
+        print(f"Error fetching data from database: {str(e)}")
+        logger.error(f"Error fetching data from database: {str(e)}")
+
+def get_values_from_env():
+    global d_file_details_file_extensions, sensitive_patterns, is_sensitive_file_extensions
+    global enable_file_ext_count_in_scan, enable_excel_file_data_scan, enable_excel_file_data_scan_min_row, n_days
+
+    d_file_details_file_extensions = os.getenv("D_FILE_DETAILS_FILE_EXTENSIONS", "").split(",")
+    sensitive_patterns = os.getenv("FILE_PATH_SCAN_SENSITIVE_PATTERNS", "").split(",")
+    is_sensitive_file_extensions = os.getenv("IS_SENSITIVE_FILE_EXTENSIONS", "").split(",")
+    enable_file_ext_count_in_scan = os.getenv("ENABLE_FILE_EXT_COUNT_IN_SCAN", "").lower()
+    enable_excel_file_data_scan = os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN", "").lower()
+    enable_excel_file_data_scan_min_row = int(os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW", 3))
+    n_days = int(os.getenv("N_DAYS", 0))
+
+def get_ip_address():
+    try:
+        system_name = platform.system()
+
+        if system_name == 'Linux':
+            result = subprocess.run(['hostname', '-I'], capture_output=True, text=True)
+            ip_addresses = result.stdout.strip().split()
+            if ip_addresses:
+                return ip_addresses[0]
+            else:
+                return None
+        elif system_name == 'Windows':
+            return socket.gethostbyname(socket.gethostname())
+        else:
+            print(f"Unsupported operating system: {system_name}")
+            logger.error(f"Unsupported operating system: {system_name}")
+            return None
+    except Exception as e:
+        print(f"Error getting IP address: {str(e)}")
+        logger.error(f"Error getting IP address: {str(e)}")
+        return None
 
 
 def get_drives():
