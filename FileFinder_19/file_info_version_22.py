@@ -65,54 +65,50 @@ def retrieve_env_values(enable_env_from_db, connection):
         get_values_from_env()
 
 def get_values_from_db(connection):
-    global config_values
     cursor = connection.cursor()
     query = "SELECT env_key, env_value FROM env_info"
     cursor.execute(query)
-    config_values = {env_key: env_value for env_key, env_value in cursor}
-    
-    global d_file_details_file_extensions
-    d_file_details_file_extensions = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
-    
-    global sensitive_patterns
-    sensitive_patterns = config_values.get("FILE_PATH_SCAN_SENSITIVE_PATTERNS")
-    
-    global is_sensitive_file_extensions
-    is_sensitive_file_extensions = config_values.get("IS_SENSITIVE_FILE_EXTENSIONS")
-    
-    global enable_file_ext_count_in_scan
-    enable_file_ext_count_in_scan = config_values.get("ENABLE_FILE_EXT_COUNT_IN_SCAN")
-    
-    global enable_excel_file_data_scan
-    enable_excel_file_data_scan = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN")
-    
-    global enable_excel_file_data_scan_min_row
-    enable_excel_file_data_scan_min_row = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
-    
-    global n_days
-    n_days = config_values.get("N_DAYS")
-    
-    cursor.close()
+
+   global config_values
+config_values = {env_key: env_value for env_key, env_value in cursor}
+global d_file_details_file_extensions
+d_file_details_file_extensions = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
+global sensitive_patterns
+sensitive_patterns = config_values.get("FILE_PATH_SCAN_SENSITIVE_PATTERNS")
+global is_sensitive_file_extensions
+is_sensitive_file_extensions = config_values.get("IS_SENSITIVE_FILE_EXTENSIONS")
+global enable_file_ext_count_in_scan
+enable_file_ext_count_in_scan = config_values.get("ENABLE_FILE_EXT_COUNT_IN_SCAN")
+global enable_excel_file_data_scan
+enable_excel_file_data_scan = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN")
+global enable_excel_file_data_scan_min_row
+enable_excel_file_data_scan_min_row = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
+global n_days
+n_days = config_values.get("N_DAYS")
+
+cursor.close()
+
 
 def get_values_from_env():
+    # Variables that can be fetched from .env
+    # Define the list of file extensions to search for
     global d_file_details_file_extensions
-    d_file_details_file_extensions = os.getenv("D_FILE_DETAILS_FILE_EXTENSIONS").split(",")  # Add more extensions as needed
-    
+    d_file_details_file_extensions = os.getenv(
+        "D_FILE_DETAILS_FILE_EXTENSIONS"
+    ).split(",")  # Add more extensions as needed
+    # Define word patterns to identify sensitive data in file names
     global sensitive_patterns
     sensitive_patterns = os.getenv("FILE_PATH_SCAN_SENSITIVE_PATTERNS").split(",")
-    
     global is_sensitive_file_extensions
     is_sensitive_file_extensions = os.getenv("IS_SENSITIVE_FILE_EXTENSIONS").split(",")
-    
+    # enables the count of files with extensions. By default, the total files are counted.
     global enable_file_ext_count_in_scan
     enable_file_ext_count_in_scan = os.getenv("ENABLE_FILE_EXT_COUNT_IN_SCAN").lower()
-    
+    # Enable scan of excel files. Enable read of the excel files
     global enable_excel_file_data_scan
     enable_excel_file_data_scan = os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN").lower()
-    
     global enable_excel_file_data_scan_min_row
     enable_excel_file_data_scan_min_row = os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
-    
     global n_days
     n_days = int(os.getenv("N_DAYS"))
 
@@ -158,117 +154,34 @@ def get_ip_address():
         return None
 
 
-from dotenv import load_dotenv
-import os
-import mysql.connector
-from mysql.connector import Error
-import platform
-import subprocess
-import socket
-from rich import print
-from rich.console import Console
+def get_removable_drives():
+    """
+    This is a function that checks for the modified days of a file.
+    Return modified or not modified - true or false
 
-console = Console()
-logger = console.log
+    Args:
+        file_path (int): file path
+        n_days (int): days modified from the env file
 
-load_dotenv()
-
-# Variables that can be fetched from database or .env
-d_file_details_file_extensions = "test"
-sensitive_patterns = "test"
-is_sensitive_file_extensions = "test"
-enable_file_ext_count_in_scan = "test"
-enable_excel_file_data_scan = "test"
-enable_excel_file_data_scan_min_row = 3
-n_days = 0
-
-# Remove default logger
-logger.remove()
-
-def create_db_connection(host, port, database_name, username, password):
+    Returns:
+        boolean: true or false
+    """
+    removable_drives = []
+    # Refactor the below piece of code
     try:
-        connection = mysql.connector.connect(
-            host=host,
-            port=port,
-            database=database_name,
-            user=username,
-            password=password
-        )
+        for partition in psutil.disk_partitions():
+            try:
+                if 'removable' in partition.opts or 'cdrom' in partition.opts:
+                    removable_drives.append(partition.device)
+            except Exception as inner_exception:
+                print(
+                    f"An error occurred while processing partition {partition.device}:"
+                    f"{inner_exception}"
+                )
+    except Exception as outer_exception:
+        print(f"Error get_removable_drives: {outer_exception}")
 
-        if connection.is_connected():
-            print("[bright_green]Database connection is completed[/bright_green]")
-            logger.success("Database connection is completed")
-            return connection
-        else:
-            logger.error("Error getting Database connection")
-
-    except Error as e:
-        print(f"Error getting Database connection: {str(e)}")
-        logger.error(f"Error getting Database connection: {str(e)}")
-        return None
-
-def retrieve_env_values(enable_env_from_db, connection):
-    if enable_env_from_db.lower() == 'true':
-        get_values_from_db(connection)
-    else:
-        get_values_from_env()
-
-def get_values_from_db(connection):
-    global d_file_details_file_extensions, sensitive_patterns, is_sensitive_file_extensions
-    global enable_file_ext_count_in_scan, enable_excel_file_data_scan, enable_excel_file_data_scan_min_row, n_days
-
-    try:
-        cursor = connection.cursor()
-        query = "SELECT env_key, env_value FROM env_info"
-        cursor.execute(query)
-        config_values = {env_key: env_value for env_key, env_value in cursor}
-
-        d_file_details_file_extensions = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
-        sensitive_patterns = config_values.get("FILE_PATH_SCAN_SENSITIVE_PATTERNS")
-        is_sensitive_file_extensions = config_values.get("IS_SENSITIVE_FILE_EXTENSIONS")
-        enable_file_ext_count_in_scan = config_values.get("ENABLE_FILE_EXT_COUNT_IN_SCAN")
-        enable_excel_file_data_scan = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN")
-        enable_excel_file_data_scan_min_row = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
-        n_days = config_values.get("N_DAYS")
-
-        cursor.close()
-    except Error as e:
-        print(f"Error fetching data from database: {str(e)}")
-        logger.error(f"Error fetching data from database: {str(e)}")
-
-def get_values_from_env():
-    global d_file_details_file_extensions, sensitive_patterns, is_sensitive_file_extensions
-    global enable_file_ext_count_in_scan, enable_excel_file_data_scan, enable_excel_file_data_scan_min_row, n_days
-
-    d_file_details_file_extensions = os.getenv("D_FILE_DETAILS_FILE_EXTENSIONS", "").split(",")
-    sensitive_patterns = os.getenv("FILE_PATH_SCAN_SENSITIVE_PATTERNS", "").split(",")
-    is_sensitive_file_extensions = os.getenv("IS_SENSITIVE_FILE_EXTENSIONS", "").split(",")
-    enable_file_ext_count_in_scan = os.getenv("ENABLE_FILE_EXT_COUNT_IN_SCAN", "").lower()
-    enable_excel_file_data_scan = os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN", "").lower()
-    enable_excel_file_data_scan_min_row = int(os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW", 3))
-    n_days = int(os.getenv("N_DAYS", 0))
-
-def get_ip_address():
-    try:
-        system_name = platform.system()
-
-        if system_name == 'Linux':
-            result = subprocess.run(['hostname', '-I'], capture_output=True, text=True)
-            ip_addresses = result.stdout.strip().split()
-            if ip_addresses:
-                return ip_addresses[0]
-            else:
-                return None
-        elif system_name == 'Windows':
-            return socket.gethostbyname(socket.gethostname())
-        else:
-            print(f"Unsupported operating system: {system_name}")
-            logger.error(f"Unsupported operating system: {system_name}")
-            return None
-    except Exception as e:
-        print(f"Error getting IP address: {str(e)}")
-        logger.error(f"Error getting IP address: {str(e)}")
-        return None
+    return removable_drives
 
 
 def get_drives():
@@ -818,108 +731,129 @@ def insert_f_machine_files_summary_count(connection, ipaddress, hostname, ops, o
 #To be commented and not used
 
 
-def windows(connection):
+def windows(connection ):
     drives = get_drives()
-    removable_drives = get_removable_drives()
-    extension = (".xls", ".xlsx")
     
+    removeable_drives = get_removable_drives()
+    extension = (".xls", ".xlsx")
     if not drives:
         print("[bright_yellow]No drives found.[/bright_yellow]")
         logger.warning("No drives found.")
-        return
-    
-    print("Drives Detected on this PC:")
-    for i, drive in enumerate(drives, start=1):
-        if drive in removable_drives:
-            print(f"{i}. {drive} (removable)")
-        else:
-            print(f"{i}. {drive}")
-    
-    scan_option_choices = ["All Drive Scan", "Specific Drive Scan"]
-    scan_option = select("Select the type of scan:", choices=scan_option_choices).ask()
-    
-    try:
-        if scan_option == "All Drive Scan":
-            print(f"Performing a full scan for data files modified or accessed in the last {n_days} days.")
-            print('***')
-            print("The Tool is now scanning for Data Files. Please Wait...")
-            found_assets = []
-            for drive in drives:
-                found_assets.extend(search_files(drive, d_file_details_file_extensions, n_days, sensitive_patterns))
-            print("[bright_green]The File Scanning is now complete!! Please wait while we insert the data into the database...[/bright_green]")
-            logger.success("The File Scanning is now complete!! Please wait while we insert the data into the database.")
-        elif scan_option == "Specific Drive Scan":
-            drive_choice = input("Enter the drive letter to scan (e.g., C:\\, D:\\, E:\\, ...) or drive path (e.g., C:\\Users\\Username): ").upper()
-            print(f"Scanning {drive_choice} for data files modified or accessed in the last {n_days} days:")
-            print('***')
-            print("Windows Scan: The Tool is now counting For  Files. Please Wait...")
-            found_assets = search_files(drive_choice, d_file_details_file_extensions, n_days, sensitive_patterns)
-            print('[bright_green]Windows Scan: The Tool has completed count For  Files. Please Wait...[/bright_green]')
-            logger.success("Windows Scan: The Tool has completed count For  Files. Please Wait...")
-        else:
-            print("Invalid option selected.")
-            logger.error("Invalid option selected.")
-            found_assets = []
-    except ValueError:
-        print("Invalid input. Please enter a valid option or drive letter.")
-        logger.error("Invalid input. Please enter a valid option or drive letter.")
-        return
-
-    try:
-        print('[bright_green]Windows Scan: insert_f_machine_files_summary_count in progress. Please Wait...[/bright_green]')
-        logger.success("Windows Scan: insert_f_machine_files_summary_count in progress. Please Wait...")
-        insert_f_machine_files_summary_count(connection, ipaddrs, hostname, ops, os_name, os_version, system_info, employee_username, start_time)
-        print('[bright_green]Windows Scan: insert_f_machine_files_summary_count complete. Please Wait...[/bright_green]')
-        logger.success("Windows Scan: insert_f_machine_files_summary_count complete. Please Wait...")
-        
-        if found_assets:
-            for asset in found_assets:
-                upsert_to_database(asset, connection, employee_username, start_time)
-            print(f"[bright_green]Scan results for the last {n_days} days saved to the MySQL database...[/bright_green]")
-            logger.info("Scan results for the last {n_days} days saved to the MySQL database.")
-            print("[bright_green]Scan result inserted into details table.[/bright_green]")
-            logger.info("Scan result inserted into details table.")
-        else:
-            print("[bright_yellow]No data assets found.[/bright_yellow]")
-            logger.warning("No data assets found.")
-    except Exception as e:
-        logger.error(f"Error connecting to the database: {str(e)}")
-    
-    if enable_excel_file_data_scan == "true":
-        if any(ext in d_file_details_file_extensions for ext in extension):
-            xls_files = [file for file in found_assets if file.lower().endswith(extension)]
-            if xls_files:
-                create_xls_file_sheet_table(connection, xls_files, employee_username, start_time)
-                create_xls_file_sheet_row_table(connection, xls_files, employee_username, start_time)
-                connection.close()
+    else:
+        print("Drives Detected on this PC:")
+        for i, drive in enumerate(drives, start=1):
+            if drive in removeable_drives:
+                print(f"{i}. {drive} (removable)")
             else:
-                print("No .xls files found.")
-    
+                print(f"{i}. {drive}")
+
+        scan_option_choices = ["All Drive Scan", "Specific Drive Scan"]
+        scan_option = select("Select the type of scan:", choices=scan_option_choices).ask()
+
+        try:
+            if scan_option == "All Drive Scan":
+                print(f"Performing a full scan for data files modified or accessed in the last {n_days} days.")
+                print('***')
+                print("The Tool is now scanning for Data Files. Please Wait...")
+
+                found_assets = []
+                for drive in drives:
+                    found_assets.extend(search_files(drive, d_file_details_file_extensions, n_days, sensitive_patterns))
+                print(
+                    "[bright_green]The File Scanning is now complete!! Please wait while we insert the data into the database...[/bright_green]")
+                logger.success("The File Scanning is now complete!! Please wait while we insert the data into the database.")
+            elif scan_option == "Specific Drive Scan":
+                drive_choice = input(
+                    r"Enter the drive letter to scan (e.g., C:\, D:\, E:\, ...) or drive path (e.g., C:\Users\Username): ").upper()
+
+                # if drive_choice in [d[0] for d in drives]:
+                # selected_drive = [d for d in drives if d[0] == drive_choice][0]
+                print(f"Scanning {drive_choice} for data files modified or accessed in the last {n_days} days:")
+                print('***')
+                print("Windows Scan: The Tool is now counting For  Files. Please Wait...")
+                found_assets = search_files(drive_choice, d_file_details_file_extensions, n_days, sensitive_patterns)
+                print('[bright_green]Windows Scan: The Tool has completed count For  Files. Please Wait...[/bright_green]')
+                logger.success("Windows Scan: The Tool has completed count For  Files. Please Wait...")
+                # else:
+                #     print("Invalid drive choice.")
+                #     found_assets = []
+            else:
+                print("Invalid option selected.")
+                logger.error("Invalid option selected.")
+                found_assets = []
+        except ValueError:
+            print("Invalid input. Please enter a valid option or drive letter.")
+            logger.error("Invalid input. Please enter a valid option or drive letter.")
+
+        
+        try:
+           
+            # inserts data into f_machine_files_summary_count;
+            print('[bright_green]Windows Scan: insert_f_machine_files_summary_count in progress. Please Wait...[/bright_green]')
+            logger.success("Windows Scan: insert_f_machine_files_summary_count in progress. Please Wait...")
+            
+            insert_f_machine_files_summary_count(connection, ipaddrs, hostname, ops, os_name, os_version, system_info,employee_username,start_time )
+            print('[bright_green]Windows Scan: insert_f_machine_files_summary_count complete. Please Wait...[/bright_green]')
+            logger.success("Windows Scan: insert_f_machine_files_summary_count complete. Please Wait......")
+            
+                
+            if found_assets:
+                for asset in found_assets:
+                    #print('[bright_green]Windows Scan: Files details upsert_to_database. Please Wait...[/bright_green]')
+                    #logger.success("Windows Scan: Files details upsert_to_database. Please Wait......")
+                    upsert_to_database(asset, connection, employee_username, start_time)
+                print(
+                    f"[bright_green]Scan results for the last {n_days} days saved to the MySQL database...[/bright_green]")
+                logger.info("Scan results for the last {n_days} days saved to the MySQL database.")
+                print(
+                    f"[bright_green]Scan result inserted into details table.[/bright_green]")
+                logger.info("Scan result inserted into details table.")
+            else:
+                print("[bright_yellow]No data assets found.[/bright_yellow]")
+                logger.warning("No data assets found.")
+        except Exception as e:
+            # Log the error to the log file
+            logger.error(f"Error connecting to the database: {str(e)}")
+        # finally:
+        #     if connection:
+        #         connection.close()
+        #if (os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN")).lower()=="true":
+        if enable_excel_file_data_scan =="true":    
+            if ".xls" or ".xlsx" in d_file_details_file_extensions:
+                # xls_files = [file for file in found_assets if file.lower().endswith(".xls")]
+                xls_files = [file for file in found_assets if file.lower().endswith(extension)]
+                if xls_files:
+                    create_xls_file_sheet_table(connection, xls_files,employee_username,start_time)
+                    create_xls_file_sheet_row_table(connection, xls_files,employee_username,start_time)
+                    connection.close()
+                else:
+                    print("No .xls files found.")
     end_time = time.time()
     elapsed_time = end_time - start_time
     ip = get_ip_address()
     scan = 'Scanning'
     create_audit_table(connection, employee_username, ip, start_time, end_time, elapsed_time, scan)
+    
 
 
 def linux(connection):
     start_time = time.time()
-    extension = (".xls", ".xlsx")
-    root_dir = '/'
-    scan_option_choices = ["All Drive Scan", "Specific Path Scan"]
-    scan_option = select("Select the type of scan:", choices=scan_option_choices).ask()
-
     try:
+        extension = (".xls", ".xlsx")
+        root_dir = '/'
+        scan_option_choices = ["All Drive Scan", "Specific Path Scan"]
+        scan_option = select("Select the type of scan:", choices=scan_option_choices).ask()
         if scan_option == "All Drive Scan":
             print(f"Performing a full scan for data files modified or accessed in the last {n_days} days: ")
             print('***')
             print("The Tool is now scanning for Data Files. Please Wait...")
             found_assets = []
+
             found_assets.extend(search_files(root_dir, d_file_details_file_extensions, n_days, sensitive_patterns))
             print("[bright_green]The File Scanning is now complete!! Please wait while we insert the data into the database...[/bright_green]")
             logger.success("The File Scanning is now complete!! Please wait while we insert the data into the database.")
         elif scan_option == "Specific Path Scan":
-            path_choice = input("Enter the path (e.g., /home/gg): ").upper()
+            path_choice = input("Enter the path (eg: root/home/gg): ").upper()
             print(f"Scanning {path_choice} for data files modified or accessed in the last {n_days} days:")
             print('***')
             print("The Tool is now scanning for Data Files. Please Wait...")
@@ -930,61 +864,76 @@ def linux(connection):
             print("Invalid option selected.")
             logger.error("Invalid option selected.")
             found_assets = []
-    except ValueError:
-        print("Invalid input. Please enter a valid path.")
-        logger.error("Invalid input. Please enter a valid path.")
-        return
 
-    try:
-        insert_f_machine_files_summary_count(connection, ipaddrs, hostname, ops, os_name, os_version, system_info, employee_username, start_time)
+        #connection = None
+        try:
+            insert_f_machine_files_summary_count(connection, ipaddrs, hostname, ops, os_name, os_version, system_info,employee_username,start_time )
 
-        if found_assets:
-            for asset in found_assets:
-                upsert_to_database(asset, connection, employee_username, start_time)
-            print(f"Scan results for the last {n_days} days saved to the MySQL database.")
-        else:
-            print("No data assets found.")
-            logger.warning("No data assets found.")
-    except Exception as e:
-        logger.error(f"Error connecting to the database: {str(e)}")
-    
-    if enable_excel_file_data_scan == "true":
-        if any(ext in d_file_details_file_extensions for ext in extension):
-            xls_files = [file for file in found_assets if file.lower().endswith(extension)]
-            if xls_files:
-                create_xls_file_sheet_table(connection, xls_files, employee_username, start_time)
-                create_xls_file_sheet_row_table(connection, xls_files, employee_username, start_time)
+            if found_assets:
+                for asset in found_assets:
+                    upsert_to_database(asset, connection, employee_username, start_time)
+                print(f"Scan results for the last {n_days} days saved to the MySQL database.")
             else:
-                print("No .xls files found.")
-                logger.warning("No .xls files found.")
-    
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    ip = get_ip_address()
-    scan = 'Scanning'
-    create_audit_table(connection, employee_username, ip, start_time, end_time, elapsed_time, scan)
+                print("No data assets found.")
+                logger.warning("No data assets found.")
+        except Exception as e:
+            # Log the error to the log file
+            logger.error(f"Error connecting to the database: {str(e)}")
+        # finally:
+        #     if connection:
+        #         connection.close()
+
+        #if (os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN")).lower() == "true":
+        if enable_excel_file_data_scan =="true":        
+            if ".xls" or ".xlsx" in d_file_details_file_extensions:
+                xls_files = [file for file in found_assets if file.lower().endswith(extension)]
+                if xls_files:
+                    create_xls_file_sheet_table(connection, xls_files,employee_username,start_time)
+                    create_xls_file_sheet_row_table(connection, xls_files,employee_username,start_time)
+                    #connection.close()
+                else:
+                    print("No .xls files found.")
+                    logger.warning("No .xls files found.")
+    except Exception as e:
+        print("[bright_red]An error occurred during the scan and database operations.[/bright_red]")
+        logger.error(f"Error in the linux function: {str(e)}", exc_info=True)
+    finally:
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        ip = get_ip_address()
+        scan = 'Scanning'
+        create_audit_table(connection, employee_username, ip, start_time, end_time, elapsed_time, scan)
 
 
 def count_all_files(directory):
+
     try:
-        total_files = sum(len(files) for _, _, files in os.walk(directory))
+        total_files = 0
+        for root, _, files in os.walk(directory):
+            total_files += len(files)
         return total_files
+
     except Exception as e:
+         # Log the error to the log file
         logger.error(f"Counting all files: {str(e)}")
         return None
 
+
 def count_files_with_extension(directory, extension):
     try:
-        count = sum(
-            1 for _, _, files in os.walk(directory)
-            for file in files if file.lower().endswith(extension.lower())
-        )
+        count = 0
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if file.lower().endswith(extension.lower()):
+                    count += 1
+
         return count
     except Exception as e:
+         # Log the error to the log file
         logger.error(f"Counting files with extensions: {str(e)}")
         return None
-
-def insert_log_file_to_mysql(connection, log_folder, ip_address, hostname, employee_username, start_time):
+    
+def insert_log_file_to_mysql(connection, log_folder, ip_address, hostname, employee_username,start_time):
     try:
         log_file_path = os.path.join(log_folder, f"{hostname}_{ip_address}.log")
         if os.path.exists(log_file_path):
@@ -1003,8 +952,7 @@ def insert_log_file_to_mysql(connection, log_folder, ip_address, hostname, emplo
                     row_modification_by
                 )
                 VALUES (
-                    (SELECT f_machine_files_summary_count_pk FROM f_machine_files_summary_count WHERE ip_address = %s),
-                    %s, %s, %s, FROM_UNIXTIME(%s), %s, FROM_UNIXTIME(%s), %s
+                    (SELECT f_machine_files_summary_count_pk FROM f_machine_files_summary_count WHERE ip_address = %s),%s,%s,%s,FROM_UNIXTIME(%s),%s,FROM_UNIXTIME(%s),%s
                 );
             ''', (
                 ip_address,
@@ -1023,86 +971,112 @@ def insert_log_file_to_mysql(connection, log_folder, ip_address, hostname, emplo
             print("[bright_yellow]Log file not found. Skipping insertion.[/bright_yellow]")
 
     except Exception as e:
-        logger.error(f"Error during log file insertion: {str(e)}")
-        connection.rollback()
         print("[bright_red]An error occurred during log file insertion.[/bright_red]")
+        print(f"Error: {str(e)}")
+        #should there not be a rollback everywhere?
+        connection.rollback()
+
+
+
+
 
 if __name__ == "__main__":
-    start_time = time.time()
     
-    load_dotenv()
-    
-    host = os.getenv("MYSQL_HOST")  
-    port = os.getenv("MYSQL_PORT")  
-    database_name = os.getenv("MYSQL_DATABASE")
-    username = os.getenv("MYSQL_USERNAME")
-    password = os.getenv("MYSQL_PASSWORD")
-    enable_env_from_db = os.getenv("ENABLE_ENV_FROM_DB", "false").lower() == "true"
-    
-    os_name = platform.system()
-    os_version = platform.release()
-    system_info = platform.uname()
-    hostname = socket.gethostname()
-    ipaddrs = get_ip_address()
+    # Change this flag to 'file' or 'database' based on your needs
+    #if "enable_env_from_db = true" then the env values will be fetched from the database
+       
+        start_time = time.time()
+        import platform
+        from dotenv import load_dotenv
+        load_dotenv()
+        
+        # Get the database connection strings
+        #global host
+        host = os.getenv("MYSQL_HOST")  # Replace with the MySQL server address
+        #global port
+        port = os.getenv("MYSQL_PORT")  # Replace with the MySQL server port
+        
+        
+        #global database_name 
+        #database_name = None
+       
+        
+        database_name = os.getenv("MYSQL_DATABASE")
+        #global username 
+        username = os.getenv("MYSQL_USERNAME")
+        #global password 
+        password = os.getenv("MYSQL_PASSWORD")
 
-    logger.add(f"{hostname}_{ipaddrs}.log")
-    logger.info("********************Start-Log********************")
-    logger.info(f"Your IP Address: {ipaddrs}")
-    logger.info(f"Your Host Name: {hostname}")
-    logger.info(f"Operating System: {os_name}")
-    logger.info(f"OS Version: {os_version}")
-    logger.info(f"System Information: {system_info}")
-    logger.info(f"Database Name: {database_name}")
+        
+                
+        os_name = platform.system()
+        # Get the OS release version
+        os_version = platform.release()
+        # Get more detailed system information
+        system_info = platform.uname()
+        hostname = socket.gethostname()
+        ipaddrs = get_ip_address()
+        app_log=logger.add(f"{hostname}_{ipaddrs}.log")
+        logger.info("********************Start-Log********************")
+        logger.info(f"Your IP Address:, {ipaddrs}")
+        logger.info(f"Your Host Name: , {hostname}")
+        logger.info(f"Operating System: {os_name}")
+        logger.info(f"OS Version: {os_version}")
+        logger.info(f"System Information: {system_info}")
+        logger.info(f"database_name: {database_name}")
+        print("Your IP Address:", ipaddrs)
+        print("Your Host Name: ", hostname)
+        print(f"Operating System: {os_name}")
+        print(f"OS Version: {os_version}")
+        print(f"System Information: {system_info}")
+        #this is picking up old database information
+        print(f"database_name: {database_name}")
+        print(f"username: {username}")
+        print(f"password: {password}")
+        
+        employee_username = input("Enter your Employee username: ")
+        scan_choices = ["File Count", "File Data Scan"]
+        scan = select("Select the type of scan:", choices=scan_choices).ask()
 
-    print("Your IP Address:", ipaddrs)
-    print("Your Host Name:", hostname)
-    print(f"Operating System: {os_name}")
-    print(f"OS Version: {os_version}")
-    print(f"System Information: {system_info}")
-    print(f"Database Name: {database_name}")
-    print(f"Username: {username}")
-    print(f"Password: {password}")
-
-    employee_username = input("Enter your Employee username: ")
-    scan_choices = ["File Count", "File Data Scan"]
-    scan = select("Select the type of scan:", choices=scan_choices).ask()
-
-    ops_choices = ["Windows", "Linux"]
-    ops = select("Select the Operating System:", choices=ops_choices).ask()
-
-    connection = create_db_connection(host, port, database_name, username, password)
-    print(f"Connection: {connection}")
-
-    if enable_env_from_db:
-        retrieve_env_values(enable_env_from_db, connection)
-    print(f"Enable Env From DB: {enable_env_from_db}")
-
-    if scan == "File Count":
-        print('***')
-        print("The tool is now counting the Data Files. Please Wait...")
-        insert_f_machine_files_summary_count(
-            connection, ipaddrs, hostname, ops, os_name, os_version, system_info, employee_username, start_time
-        )
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        create_audit_table(connection, employee_username, ipaddrs, start_time, end_time, elapsed_time, scan)
-        print('[bright_green]The File Counting is now complete.[/bright_green]')
-        logger.success("The File Counting is now complete.")
-    elif scan == "File Data Scan":
-        if ops == "Windows":
-            windows(connection)
-        elif ops == "Linux":
-            linux(connection)
+        ops_choices = ["Windows", "Linux"]
+        ops = select("Select the Operating System:", choices=ops_choices).ask()
+        
+        
+        connection = create_db_connection(host, port, database_name,username,password)
+        print(f"connection: {connection}")
+        retrieve_env_values(enable_env_from_db,connection)
+        print(f"enable_env_from_db: {enable_env_from_db}")
+        
+        if scan == "File Count":
+            print('***')
+            print("The tool is now counting the Data Files. Please Wait...")
+            
+            
+            insert_f_machine_files_summary_count(connection, ipaddrs, hostname, ops, os_name, os_version, system_info,employee_username,start_time )
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            create_audit_table(connection, employee_username, ipaddrs, start_time, end_time, elapsed_time, scan)
+            #Enter the error data here 
+            #connection.close()
+            print('[bright_green]The File Counting is now complete.[/bright_green]')
+            logger.success("The File Counting is now complete.")
+        elif scan == "File Data Scan":
+            if ops == "Windows":
+                
+                windows(connection)
+                
+            elif ops == "Linux":
+                linux(connection)
+            else:
+                print("Incorrect input")
         else:
             print("Incorrect input")
-    else:
-        print("Incorrect input")
 
-    logger.info("********************End-Log********************")
-    log_folder = os.path.dirname(os.path.abspath(__file__))
-    if os.getenv("ENABLE_APP_LOG_TO_DB") == "true":
-        insert_log_file_to_mysql(connection, log_folder, ipaddrs, hostname, employee_username, start_time)
-    print("Press Esc to exit...")
-    connection.close()
-    while not keyboard.is_pressed('Esc'):
-        pass
+        logger.info("********************End-Log********************")
+        log_folder = os.path.dirname(os.path.abspath(__file__))
+        if os.getenv("ENABLE_APP_LOG_TO_DB")=="true":
+            insert_log_file_to_mysql(connection, log_folder, ipaddrs, hostname, employee_username,start_time)
+        print("Press Esc to exit...")
+        connection.close()
+        while keyboard.is_pressed('Esc') == False:
+            pass
