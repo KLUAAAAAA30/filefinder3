@@ -65,49 +65,54 @@ def retrieve_env_values(enable_env_from_db, connection):
         get_values_from_env()
 
 def get_values_from_db(connection):
+    global config_values
     cursor = connection.cursor()
     query = "SELECT env_key, env_value FROM env_info"
     cursor.execute(query)
-
-global config_values
-config_values = {env_key: env_value for env_key, env_value in cursor}
-global d_file_details_file_extensions
-d_file_details_file_extensions = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
-global sensitive_patterns
-sensitive_patterns = config_values.get("FILE_PATH_SCAN_SENSITIVE_PATTERNS")
-global is_sensitive_file_extensions
-is_sensitive_file_extensions = config_values.get("IS_SENSITIVE_FILE_EXTENSIONS")
-global enable_file_ext_count_in_scan
-enable_file_ext_count_in_scan = config_values.get("ENABLE_FILE_EXT_COUNT_IN_SCAN")
-global enable_excel_file_data_scan
-enable_excel_file_data_scan = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN")
-global enable_excel_file_data_scan_min_row
-enable_excel_file_data_scan_min_row = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
-global n_days
-n_days = config_values.get("N_DAYS")
-
-cursor.close()
+    config_values = {env_key: env_value for env_key, env_value in cursor}
+    
+    global d_file_details_file_extensions
+    d_file_details_file_extensions = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
+    
+    global sensitive_patterns
+    sensitive_patterns = config_values.get("FILE_PATH_SCAN_SENSITIVE_PATTERNS")
+    
+    global is_sensitive_file_extensions
+    is_sensitive_file_extensions = config_values.get("IS_SENSITIVE_FILE_EXTENSIONS")
+    
+    global enable_file_ext_count_in_scan
+    enable_file_ext_count_in_scan = config_values.get("ENABLE_FILE_EXT_COUNT_IN_SCAN")
+    
+    global enable_excel_file_data_scan
+    enable_excel_file_data_scan = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN")
+    
+    global enable_excel_file_data_scan_min_row
+    enable_excel_file_data_scan_min_row = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
+    
+    global n_days
+    n_days = config_values.get("N_DAYS")
+    
+    cursor.close()
 
 def get_values_from_env():
-    # Variables that can be fetched from .env
-    # Define the list of file extensions to search for
     global d_file_details_file_extensions
-    d_file_details_file_extensions = os.getenv(
-        "D_FILE_DETAILS_FILE_EXTENSIONS"
-    ).split(",")  # Add more extensions as needed
-    # Define word patterns to identify sensitive data in file names
+    d_file_details_file_extensions = os.getenv("D_FILE_DETAILS_FILE_EXTENSIONS").split(",")  # Add more extensions as needed
+    
     global sensitive_patterns
     sensitive_patterns = os.getenv("FILE_PATH_SCAN_SENSITIVE_PATTERNS").split(",")
+    
     global is_sensitive_file_extensions
     is_sensitive_file_extensions = os.getenv("IS_SENSITIVE_FILE_EXTENSIONS").split(",")
-    # enables the count of files with extensions. By default, the total files are counted.
+    
     global enable_file_ext_count_in_scan
     enable_file_ext_count_in_scan = os.getenv("ENABLE_FILE_EXT_COUNT_IN_SCAN").lower()
-    # Enable scan of excel files. Enable read of the excel files
+    
     global enable_excel_file_data_scan
     enable_excel_file_data_scan = os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN").lower()
+    
     global enable_excel_file_data_scan_min_row
     enable_excel_file_data_scan_min_row = os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
+    
     global n_days
     n_days = int(os.getenv("N_DAYS"))
 
