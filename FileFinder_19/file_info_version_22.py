@@ -1,16 +1,13 @@
 import sys
-from PyInstaller.utils.hooks import collect_data_files
 import os
 import pandas as pd
 import psutil
 import mysql.connector
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
-import xlrd
 from dotenv import load_dotenv
 import platform
-load_dotenv()
 import time
 import socket
 from questionary import select
@@ -19,135 +16,108 @@ import keyboard
 import subprocess
 import win32net
 from loguru import logger
-enable_env_from_db = os.getenv("ENABLE_ENV_FROM_DB")
-#####################
-#Variables that can be fetched from database or .env
 
+load_dotenv()
+
+# Variables that can be fetched from database or .env
 # Define the list of file extensions to search for
 d_file_details_file_extensions = "test"
 # Define word patterns to identify sensitive data in file names
 sensitive_patterns = "test"
-is_sensitive_file_extensions="test"
-# enables teh count of files with extensions. By Defaualt the total files are counted. 
-enable_file_ext_count_in_scan="test"
-# Enbale scan of excel files. Enable read of the excel files 
-enable_excel_file_data_scan="test"
-enable_excel_file_data_scan_min_row=3
+is_sensitive_file_extensions = "test"
+# Enables the count of files with extensions. By default, the total files are counted.
+enable_file_ext_count_in_scan = "test"
+# Enable scan of excel files. Enable read of the excel files
+enable_excel_file_data_scan = "test"
+enable_excel_file_data_scan_min_row = 3
 n_days = 0
-#n_days = os.getenv("N_DAYS")
 
-
-
-
-
-
-# Configure logging to a file
-# log_file = "error.log"
-# logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-
-# def operating_system():
-#     ops=input("Enter 1 for Windows and 2 for Linux")
-
-#What is the logger.remove used for
+# Remove default logger
 logger.remove()
 
-
-
-
-
-
-def create_db_connection(host, port, database_name,username,password):
-    
+def create_db_connection(host, port, database_name, username, password):
     try:
         # Define your MySQL database connection details
-        
         connection = mysql.connector.connect(
-             host=host,
-             port=port,
-             database=database_name,
-             user=username,
-             password=password
-         )
-        
-       
-        if connection.is_connected():     
-            print("[bright_green]Database connection is commpleted [/bright_green]")
-            logger.success("Database connection is commpleted ")
+            host=host,
+            port=port,
+            database=database_name,
+            user=username,
+            password=password
+        )
+
+        if connection.is_connected():
+            print("[bright_green]Database connection is completed [/bright_green]")
+            logger.success("Database connection is completed ")
             return connection
         else:
-            logger.error(f"Error getting Database connection: {str(e)}", exc_info=True)        
-        
+            logger.error("Error getting Database connection", exc_info=True)
+
     except Exception as e:
         print(f"Error getting Database connection: {str(e)}", exc_info=True)
         logger.error(f"Error getting Database connection: {str(e)}", exc_info=True)
         return None
 
-
-def retrieve_env_values(enable_env_from_db,connection):
+def retrieve_env_values(enable_env_from_db, connection):
     if enable_env_from_db == 'true':
         get_values_from_db(connection)
-        
     else:
         get_values_from_env()
 
-
 def get_values_from_db(connection):
-    
-    
     cursor = connection.cursor()
     query = "SELECT env_key, env_value FROM env_info"
     cursor.execute(query)
 
-    global config_values
-    config_values = {env_key: env_value for env_key, env_value in cursor}
-    global d_file_details_file_extensions
-    d_file_details_file_extensions  = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
-    global sensitive_patterns
-    sensitive_patterns  = config_values.get("FILE_PATH_SCAN_SENSITIVE_PATTERNS")
-    global is_sensitive_file_extensions
-    is_sensitive_file_extensions = config_values.get("IS_SENSITIVE_FILE_EXTENSIONS")
-    global enable_file_ext_count_in_scan
-    enable_file_ext_count_in_scan=config_values.get("ENABLE_FILE_EXT_COUNT_IN_SCAN")
-    global enable_excel_file_data_scan
-    enable_excel_file_data_scan=config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN")
-    global enable_excel_file_data_scan_min_row
-    enable_excel_file_data_scan_min_row=config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
-    global n_days
-    n_days = config_values.get("N_DAYS")
+   global config_values
+config_values = {env_key: env_value for env_key, env_value in cursor}
+global d_file_details_file_extensions
+d_file_details_file_extensions = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
+global sensitive_patterns
+sensitive_patterns = config_values.get("FILE_PATH_SCAN_SENSITIVE_PATTERNS")
+global is_sensitive_file_extensions
+is_sensitive_file_extensions = config_values.get("IS_SENSITIVE_FILE_EXTENSIONS")
+global enable_file_ext_count_in_scan
+enable_file_ext_count_in_scan = config_values.get("ENABLE_FILE_EXT_COUNT_IN_SCAN")
+global enable_excel_file_data_scan
+enable_excel_file_data_scan = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN")
+global enable_excel_file_data_scan_min_row
+enable_excel_file_data_scan_min_row = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
+global n_days
+n_days = config_values.get("N_DAYS")
 
-    cursor.close()    
-
-
+cursor.close()
 
 
 def get_values_from_env():
-    #Variables that can be fetched from  .env
+    # Variables that can be fetched from .env
     # Define the list of file extensions to search for
-    global d_file_details_file_extensions 
-    d_file_details_file_extensions  = os.getenv("D_FILE_DETAILS_FILE_EXTENSIONS").split(",")  # Add more extensions as needed
+    global d_file_details_file_extensions
+    d_file_details_file_extensions = os.getenv(
+        "D_FILE_DETAILS_FILE_EXTENSIONS"
+    ).split(",")  # Add more extensions as needed
     # Define word patterns to identify sensitive data in file names
-    global sensitive_patterns 
-    sensitive_patterns  = os.getenv("FILE_PATH_SCAN_SENSITIVE_PATTERNS").split(",")
-    global is_sensitive_file_extensions 
+    global sensitive_patterns
+    sensitive_patterns = os.getenv("FILE_PATH_SCAN_SENSITIVE_PATTERNS").split(",")
+    global is_sensitive_file_extensions
     is_sensitive_file_extensions = os.getenv("IS_SENSITIVE_FILE_EXTENSIONS").split(",")
-    # enables teh count of files with extensions. By Defaualt the total files are counted. 
+    # enables the count of files with extensions. By default, the total files are counted.
     global enable_file_ext_count_in_scan
-    enable_file_ext_count_in_scan=os.getenv("ENABLE_FILE_EXT_COUNT_IN_SCAN").lower()
-    # Enbale scan of excel files. Enable read of the excel files 
+    enable_file_ext_count_in_scan = os.getenv("ENABLE_FILE_EXT_COUNT_IN_SCAN").lower()
+    # Enable scan of excel files. Enable read of the excel files
     global enable_excel_file_data_scan
-    enable_excel_file_data_scan=os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN").lower()
+    enable_excel_file_data_scan = os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN").lower()
     global enable_excel_file_data_scan_min_row
-    enable_excel_file_data_scan_min_row=os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
+    enable_excel_file_data_scan_min_row = os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
     global n_days
     n_days = int(os.getenv("N_DAYS"))
-    
-    
 
-    
+
 def get_ip_address():
-    """This is a function that checks for the modified days of a file. 
-       Return modified or not modified - true or false     
+    """
+    This is a function that checks for the modified days of a file.
+    Return modified or not modified - true or false
+
     Args:
         file_path (int): file path
         n_days (int): days modified from the env file
@@ -155,26 +125,24 @@ def get_ip_address():
     Returns:
         boolean: true or false
     """
-    
-    
     try:
         # Check the operating system
         system_name = platform.system()
-        
+
         if system_name == 'Linux':
             # Run the 'hostname -I' command and capture the output
             result = subprocess.run(['hostname', '-I'], capture_output=True, text=True)
-            
+
             # Extract the IP address from the command output
             ip_addresses = result.stdout.strip().split()
-            
+
             # Return the first IP address in the list
             if ip_addresses:
                 return ip_addresses[0]
             else:
                 return None
         elif system_name == 'Windows':
-                # For Windows, use a different method to get the local IP address
+            # For Windows, use a different method to get the local IP address
             return socket.gethostbyname(socket.gethostname())
         else:
             print(f"Unsupported operating system: {system_name}")
@@ -185,10 +153,12 @@ def get_ip_address():
         logger.error(f"Error getting IP address: {str(e)}")
         return None
 
+
 def get_removable_drives():
-    
-    """This is a function that checks for the modified days of a file. 
-       Return modified or not modified - true or false     
+    """
+    This is a function that checks for the modified days of a file.
+    Return modified or not modified - true or false
+
     Args:
         file_path (int): file path
         n_days (int): days modified from the env file
@@ -196,21 +166,23 @@ def get_removable_drives():
     Returns:
         boolean: true or false
     """
-    
     removable_drives = []
-#Refactor the below piece of code
+    # Refactor the below piece of code
     try:
         for partition in psutil.disk_partitions():
             try:
                 if 'removable' in partition.opts or 'cdrom' in partition.opts:
                     removable_drives.append(partition.device)
             except Exception as inner_exception:
-                print(f"An error occurred while processing partition {partition.device}: {inner_exception}")
-
+                print(
+                    f"An error occurred while processing partition {partition.device}:"
+                    f"{inner_exception}"
+                )
     except Exception as outer_exception:
         print(f"Error get_removable_drives: {outer_exception}")
 
     return removable_drives
+
 
 def get_drives():
     all_drives = []
@@ -226,15 +198,16 @@ def get_drives():
         return None
 
 
-#what is this function used for
-# Define a cuhostname = socket.gethostname()  stom exception class for file-related errors
+# Define a custom exception class for file-related errors
 class FileError(Exception):
     pass
 
 
 def is_recently_accessed_or_modified(file_path, n_days):
-    """This is a function that checks for the modified days of a file. 
-       Return modified or not modified - true or false     
+    """
+    This is a function that checks for the modified days of a file.
+    Return modified or not modified - true or false
+
     Args:
         file_path (int): file path
         n_days (int): days modified from the env file
@@ -242,7 +215,6 @@ def is_recently_accessed_or_modified(file_path, n_days):
     Returns:
         boolean: true or false
     """
-    
     try:
         now = datetime.now()
         file_info = os.stat(file_path)
@@ -261,7 +233,6 @@ def is_recently_accessed_or_modified(file_path, n_days):
 def is_sensitive_file(file_path, sensitive_patterns):
     try:
         # Check if the file extension is in the allowed list
-        #allowed_extensions = os.getenv("IS_SENSITIVE_FILE_EXTENSIONS").lower().split(',')
         allowed_extensions = is_sensitive_file_extensions
         if not any(file_path.lower().endswith(ext) for ext in allowed_extensions):
             return False
@@ -274,11 +245,11 @@ def is_sensitive_file(file_path, sensitive_patterns):
                 return True
 
         # If you want to check sensitive patterns in the file content, uncomment the following code:
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
-                file_content = file.read().lower()
-                for pattern in sensitive_patterns:
-                    if pattern in file_content:
-                        return True
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
+            file_content = file.read().lower()
+            for pattern in sensitive_patterns:
+                if pattern in file_content:
+                    return True
 
     except Exception as e:
         # Log the error to the log file
@@ -292,52 +263,50 @@ def search_files(root_dir, extensions, n_days, sensitive_patterns):
     try:
         for foldername, subfolders, filenames in os.walk(root_dir):
             for filename in filenames:
-                #if os.getenv("D_FILE_DETAILS_FILE_EXTENSIONS").lower()=="all":
-                if   d_file_details_file_extensions =="all":
-                    
+                if d_file_details_file_extensions == "all":
                     file_path = os.path.join(foldername, filename)
-                    #File modified date check. If "File modified date" more than 0 then get only modified files
-                    if n_days > 0 :
+                    # File modified date check. If "File modified date" more than 0 then get only modified files
+                    if n_days > 0:
                         if is_recently_accessed_or_modified(file_path, n_days):
                             found_assets.append(file_path)
-                    #File modified date check. If "File modified date" is 0 then get all the files
+                    # File modified date check. If "File modified date" is 0 then get all the files
                     else:
-                            found_assets.append(file_path)
+                        found_assets.append(file_path)
                 else:
                     if any(filename.lower().endswith(ext) for ext in extensions):
                         file_path = os.path.join(foldername, filename)
-                        #File modified date check. If "File modified date" more than 0 then get only modified files
-                        if n_days >0 :
+                        # File modified date check. If "File modified date" more than 0 then get only modified files
+                        if n_days > 0:
                             if is_recently_accessed_or_modified(file_path, n_days):
                                 found_assets.append(file_path)
-                        #File modified date check. If "File modified date" is 0 then get all the files
-                        else:    
+                        # File modified date check. If "File modified date" is 0 then get all the files
+                        else:
                             found_assets.append(file_path)
-                            
     except Exception as e:
         # Log the error to the log file
         logger.error(f"Error scanning files: {str(e)}", exc_info=True)
     return found_assets
 
-   
 
 def upsert_to_database(file_path, connection, employee_username, start_time):
     try:
-        if platform.system()=="Windows":
+        if platform.system() == "Windows":
             import win32api
             import win32con
             import win32security
+
             # get_owner_name = get_owner_name_windows
             sd = win32security.GetFileSecurity(file_path, win32security.OWNER_SECURITY_INFORMATION)
             owner_sid = sd.GetSecurityDescriptorOwner()
-            name, domain, type = win32security.LookupAccountSid(None, owner_sid)
+            name, domain, _ = win32security.LookupAccountSid(None, owner_sid)
             owner_name = f"{domain}\\{name}"
-        elif platform.system()=="Linux":
+        elif platform.system() == "Linux":
             import pwd
+
             stat_info = os.stat(file_path)
             owner_uid = stat_info.st_uid
             owner_name = pwd.getpwuid(owner_uid).pw_name
-        
+
         hostname = socket.gethostname()
         ipaddrs = socket.gethostbyname(hostname)
         cursor = connection.cursor()
@@ -353,47 +322,56 @@ def upsert_to_database(file_path, connection, employee_username, start_time):
 
         # Perform an upsert based on file_path
         cursor.execute('''
-            INSERT INTO d_file_details (f_machine_files_summary_count_fk, 
-            ip_address,hostname,file_path, file_size_bytes, file_name, file_extension,file_owner,file_creation_time, 
-            file_modification_time, file_last_access_time,file_is_sensitive_data,row_creation_date_time, 
-            row_created_by,row_modification_date_time,row_modification_by)
-            VALUES ((  SELECT f_machine_files_summary_count_pk FROM f_machine_files_summary_count WHERE hostname = %s), 
-            %s,%s,%s, %s, %s, %s,%s, %s, %s, %s,%s,FROM_UNIXTIME(%s),%s,FROM_UNIXTIME(%s),%s)
+            INSERT INTO d_file_details (
+                f_machine_files_summary_count_fk, 
+                ip_address, hostname, file_path, file_size_bytes, file_name, file_extension, file_owner, 
+                file_creation_time, file_modification_time, file_last_access_time, file_is_sensitive_data, 
+                row_creation_date_time, row_created_by, row_modification_date_time, row_modification_by
+            )
+            VALUES (
+                (SELECT f_machine_files_summary_count_pk FROM f_machine_files_summary_count WHERE hostname = %s), 
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, FROM_UNIXTIME(%s), %s, FROM_UNIXTIME(%s), %s
+            )
             ON DUPLICATE KEY UPDATE
-            file_size_bytes = %s, row_modification_date_time = FROM_UNIXTIME(%s),row_modification_by=%s ;
+                file_size_bytes = %s, row_modification_date_time = FROM_UNIXTIME(%s), row_modification_by = %s;
         ''', (
-            hostname, ipaddrs, hostname, truncated_file_path, file_size, file_name, file_extension,owner_name, creation_time, 
-            modification_time,
-            access_time, file_is_sensitive_data, start_time, employee_username, start_time, employee_username,
-            file_size, start_time, employee_username))
-        
+            hostname, ipaddrs, hostname, truncated_file_path, file_size, file_name, file_extension, owner_name, 
+            creation_time, modification_time, access_time, file_is_sensitive_data, start_time, 
+            employee_username, start_time, employee_username, file_size, start_time, employee_username
+        ))
+
         connection.commit()
     except Exception as e:
         # Log the error to the log file
         logger.error(f"Error upsert_to_database: {str(e)}", exc_info=True)
-    
 
 
-def create_xls_file_sheet_table(connection, xls_files,employee_username, start_time):
+def create_xls_file_sheet_table(connection, xls_files, employee_username, start_time):
     try:
         cursor = connection.cursor()
         for xls_file in xls_files:
-            # workbook = xlrd.open_workbook(xls_file)
             xls_data = pd.read_excel(xls_file, sheet_name=None)  # Read all sheets
 
             for sheet_name, sheet in xls_data.items():
                 num_rows, num_cols = sheet.shape
 
                 cursor.execute('''
-                INSERT INTO xls_file_sheet (d_file_details_fk, sheet_name, total_cols, total_rows,row_creation_date_time, row_created_by,row_modification_date_time,row_modification_by)
-                VALUES (
-                    (SELECT d_file_details_pk FROM d_file_details WHERE file_path = %s),
-                    %s, %s, %s,FROM_UNIXTIME(%s),%s,FROM_UNIXTIME(%s),%s
-                )ON DUPLICATE KEY UPDATE
-                               total_cols=VALUES(total_cols),
-                               total_rows=VALUES(total_rows),
-                               row_modification_date_time = FROM_UNIXTIME(%s),row_modification_by=%s ; 
-                ''', (xls_file, sheet_name, num_cols, num_rows,start_time, employee_username, start_time, employee_username,start_time, employee_username))
+                    INSERT INTO xls_file_sheet (
+                        d_file_details_fk, sheet_name, total_cols, total_rows, row_creation_date_time, 
+                        row_created_by, row_modification_date_time, row_modification_by
+                    )
+                    VALUES (
+                        (SELECT d_file_details_pk FROM d_file_details WHERE file_path = %s),
+                        %s, %s, %s, FROM_UNIXTIME(%s), %s, FROM_UNIXTIME(%s), %s
+                    )
+                    ON DUPLICATE KEY UPDATE
+                        total_cols = VALUES(total_cols),
+                        total_rows = VALUES(total_rows),
+                        row_modification_date_time = FROM_UNIXTIME(%s), row_modification_by = %s;
+                ''', (
+                    xls_file, sheet_name, num_cols, num_rows, start_time, employee_username, start_time, 
+                    employee_username, start_time, employee_username
+                ))
                 connection.commit()
         print("[bright_green]Data inserted into xls_file_sheet table.[/bright_green]")
         logger.success("Data inserted into xls_file_sheet table.")
@@ -402,7 +380,7 @@ def create_xls_file_sheet_table(connection, xls_files,employee_username, start_t
 
 
 # Function to create a new table for .xls file rows
-def create_xls_file_sheet_row_table(connection, xls_files,employee_username, start_time):
+def create_xls_file_sheet_row_table(connection, xls_files, employee_username, start_time):
     try:
         cursor = connection.cursor()
         for xls_file in xls_files:
@@ -411,11 +389,8 @@ def create_xls_file_sheet_row_table(connection, xls_files,employee_username, sta
             for sheet_name, sheet in xls_data.items():
                 num_rows, num_cols = sheet.shape
 
-
                 # Insert the first 10 columns of data into the table, or all if there are fewer than 10 columns
-                #for row_idx in range(min(int(os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")), num_rows)):  # Read up to the first 3 rows
-                for row_idx in range(min(int(enable_excel_file_data_scan_min_row), num_rows)):  # Read up to the first 3 rows
-                
+                for row_idx in range(min(int(enable_excel_file_data_scan_min_row), num_rows)):  # Read up to the first few rows
                     is_row = "no" if row_idx == 0 else "yes"  # First row is a heading, the rest are data
                     col_data = sheet.iloc[row_idx, :10].tolist()  # Take the first 10 columns
                     col_data.extend(["NULL"] * (10 - len(col_data)))  # Fill the remaining columns with "NULL"
@@ -424,43 +399,46 @@ def create_xls_file_sheet_row_table(connection, xls_files,employee_username, sta
                     is_truncate = "yes" if num_cols > 10 else "no"
 
                     cursor.execute(f'''
-                                        INSERT INTO xls_file_sheet_row (xls_file_sheet_fk, sheet_name, col_no, row_no, is_row,
-                                        col_data_1, col_data_2, col_data_3, col_data_4, col_data_5,
-                                        col_data_6, col_data_7, col_data_8, col_data_9, col_data_10, is_truncate,
-                                        row_creation_date_time, row_created_by,row_modification_date_time,row_modification_by
-                                        )
-                                        VALUES (
-                                        (
-                                        SELECT xls_file_sheet_pk 
-                                        FROM xls_file_sheet 
-                                        WHERE sheet_name = %s AND d_file_details_fk = (
-                                        SELECT d_file_details_pk
-                                        FROM d_file_details 
-                                        WHERE file_path = %s LIMIT 1
-
-                                        ) LIMIT 1
-                                        ),
-                                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,FROM_UNIXTIME(%s),%s,FROM_UNIXTIME(%s),%s
-                                        )ON DUPLICATE KEY UPDATE
-                                                   xls_file_sheet_fk=VALUES(xls_file_sheet_fk),
-                                                   sheet_name=VALUES(sheet_name),
-                                                   col_no=VALUES(col_no),
-                                                   row_no=VALUES(row_no),
-                                                   col_data_1=VALUES(col_data_1),
-                                                   col_data_2=VALUES(col_data_2),
-                                                       col_data_3=VALUES(col_data_3),
-                                                       col_data_4=VALUES(col_data_4),
-                                                       col_data_5=VALUES(col_data_5),
-                                                       col_data_6=VALUES(col_data_6),
-                                                       col_data_7=VALUES(col_data_7),
-                                                       col_data_8=VALUES(col_data_8),
-                                                       col_data_9=VALUES(col_data_9),
-                                                       col_data_10=VALUES(col_data_10),
-                                                       row_modification_date_time = FROM_UNIXTIME(%s),row_modification_by=%s ;
-                                        ''', (
-                        sheet_name, xls_file, sheet_name, num_cols, row_idx + 1, is_row, *col_data, 
-                        is_truncate,start_time, employee_username, start_time, employee_username,
-                        start_time, employee_username))
+                        INSERT INTO xls_file_sheet_row (
+                            xls_file_sheet_fk, sheet_name, col_no, row_no, is_row,
+                            col_data_1, col_data_2, col_data_3, col_data_4, col_data_5,
+                            col_data_6, col_data_7, col_data_8, col_data_9, col_data_10, 
+                            is_truncate, row_creation_date_time, row_created_by, 
+                            row_modification_date_time, row_modification_by
+                        )
+                        VALUES (
+                            (
+                                SELECT xls_file_sheet_pk 
+                                FROM xls_file_sheet 
+                                WHERE sheet_name = %s AND d_file_details_fk = (
+                                    SELECT d_file_details_pk
+                                    FROM d_file_details 
+                                    WHERE file_path = %s LIMIT 1
+                                ) LIMIT 1
+                            ),
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                            FROM_UNIXTIME(%s), %s, FROM_UNIXTIME(%s), %s
+                        )
+                        ON DUPLICATE KEY UPDATE
+                            xls_file_sheet_fk = VALUES(xls_file_sheet_fk),
+                            sheet_name = VALUES(sheet_name),
+                            col_no = VALUES(col_no),
+                            row_no = VALUES(row_no),
+                            col_data_1 = VALUES(col_data_1),
+                            col_data_2 = VALUES(col_data_2),
+                            col_data_3 = VALUES(col_data_3),
+                            col_data_4 = VALUES(col_data_4),
+                            col_data_5 = VALUES(col_data_5),
+                            col_data_6 = VALUES(col_data_6),
+                            col_data_7 = VALUES(col_data_7),
+                            col_data_8 = VALUES(col_data_8),
+                            col_data_9 = VALUES(col_data_9),
+                            col_data_10 = VALUES(col_data_10),
+                            row_modification_date_time = FROM_UNIXTIME(%s), row_modification_by = %s;
+                    ''', (
+                        sheet_name, xls_file, sheet_name, num_cols, row_idx + 1, is_row, *col_data, is_truncate, 
+                        start_time, employee_username, start_time, employee_username, start_time, employee_username
+                    ))
                     connection.commit()
         print("[bright_green]Data inserted into xls_file_sheet_row table.[/bright_green]")
         logger.success("Data inserted into xls_file_sheet_row table.")
@@ -468,7 +446,7 @@ def create_xls_file_sheet_row_table(connection, xls_files,employee_username, sta
         logger.error(f"create_xls_file_sheet_row_table: {str(e)}", exc_info=True)
 
 
-# function for audit table
+# Function for audit table
 def create_audit_table(connection, employee_username, ip, start_time, end_time, elapsed_time, scan):
     if scan == "File Count":
         scan = 'Count'
@@ -477,20 +455,25 @@ def create_audit_table(connection, employee_username, ip, start_time, end_time, 
         cursor = connection.cursor()
 
         cursor.execute('''
-            INSERT INTO audit_info (f_machine_files_summary_count_fk,pc_ip_address ,employee_username, start_time,end_time, duration,filefinder_activity,activity_status,
-            row_creation_date_time, row_created_by,row_modification_date_time,row_modification_by
+            INSERT INTO audit_info (
+                f_machine_files_summary_count_fk, pc_ip_address, employee_username, start_time, 
+                end_time, duration, filefinder_activity, activity_status, row_creation_date_time, 
+                row_created_by, row_modification_date_time, row_modification_by
             )
-            VALUES ((SELECT f_machine_files_summary_count_pk FROM f_machine_files_summary_count WHERE ip_address= %s),%s, %s, FROM_UNIXTIME(%s), FROM_UNIXTIME(%s), %s,%s,%s,
-            FROM_UNIXTIME(%s),%s,FROM_UNIXTIME(%s),%s
+            VALUES (
+                (SELECT f_machine_files_summary_count_pk FROM f_machine_files_summary_count WHERE ip_address = %s),
+                %s, %s, FROM_UNIXTIME(%s), FROM_UNIXTIME(%s), %s, %s, %s, FROM_UNIXTIME(%s), %s, FROM_UNIXTIME(%s), %s
             );
-        ''', (ip, ip, employee_username, start_time, end_time, end_time - start_time, scan, activity,
-        start_time, employee_username, start_time, employee_username
+        ''', (
+            ip, ip, employee_username, start_time, end_time, end_time - start_time, scan, activity, 
+            start_time, employee_username, start_time, employee_username
         ))
         connection.commit()
         print("[bright_green]Data inserted into audit_info table.[/bright_green]")
         logger.success("Data inserted into audit_info table.")
     except Exception as e:
         logger.error(f"Error create_audit_table: {str(e)}", exc_info=True)
+
 
 def get_shared_drives():
     shared_drives = []
@@ -501,6 +484,7 @@ def get_shared_drives():
         if resume == 0:
             break
     return shared_drives
+
 
 
 
