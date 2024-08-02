@@ -49,7 +49,9 @@ try:
     for index, row in df_assessment.iterrows():
         name = row["name"]
         create_time_str = row["createDate"]
-        create_time = datetime.strptime(create_time_str, "%d-%b-%Y").strftime("%Y-%m-%d")
+        create_time = datetime.strptime(
+            create_time_str, "%d-%b-%Y"
+        ).strftime("%Y-%m-%d")
         ip = row["collectedIpAddress"]
         model = row["model"]
         os_name = row["osName"]
@@ -59,7 +61,9 @@ try:
 
         # Insert data into your MySQL database
         query = """
-            INSERT INTO machine_info_migration_centre (name, create_time, ip, model, os_name, total_processor, total_memory, free_memory)
+            INSERT INTO machine_info_migration_centre 
+            (name, create_time, ip, model, os_name, total_processor, total_memory, 
+             free_memory)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE
             create_time = VALUES(create_time),
