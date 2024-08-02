@@ -1,46 +1,43 @@
 import sys
-from PyInstaller.utils.hooks import collect_data_files
 import os
 import pandas as pd
 import psutil
 import mysql.connector
+import csv
 from datetime import datetime
 import logging
-import xlrd
 from dotenv import load_dotenv
 import platform
+import time
 import socket
-import subprocess
 from questionary import select
 from rich import print
-from loguru import logger
+import keyboard
+import subprocess
 import win32net
-import win32api
-import win32con
-import win32security
-import pwd
+from loguru import logger
 
 load_dotenv()
 
-# Load configuration from .env or database
-enable_env_from_db = os.getenv("ENABLE_ENV_FROM_DB", 'false').lower() == 'true'
-
 # Variables that can be fetched from database or .env
+# Define the list of file extensions to search for
 d_file_details_file_extensions = "test"
+# Define word patterns to identify sensitive data in file names
 sensitive_patterns = "test"
 is_sensitive_file_extensions = "test"
+# Enables the count of files with extensions. By default, the total files are counted.
 enable_file_ext_count_in_scan = "test"
+# Enable scan of excel files. Enable read of the excel files
 enable_excel_file_data_scan = "test"
 enable_excel_file_data_scan_min_row = 3
 n_days = 0
 
-# Remove default logger to configure custom logger
+# Remove default logger
 logger.remove()
 
-
 def create_db_connection(host, port, database_name, username, password):
-    """Creates and returns a database connection."""
     try:
+        # Define your MySQL database connection details
         connection = mysql.connector.connect(
             host=host,
             port=port,
@@ -48,43 +45,48 @@ def create_db_connection(host, port, database_name, username, password):
             user=username,
             password=password
         )
-        if connection.is_connected():
-            print("[bright_green]Database connection is completed[/bright_green]")
-            logger.success("Database connection is completed")
-            return connection
-    except Exception as e:
-        logger.error(f"Error getting Database connection: {str(e)}", exc_info=True)
-    return None
 
+        if connection.is_connected():
+            print("[bright_green]Database connection is completed [/bright_green]")
+            logger.success("Database connection is completed ")
+            return connection
+        else:
+            logger.error("Error getting Database connection", exc_info=True)
+
+    except Exception as e:
+        print(f"Error getting Database connection: {str(e)}", exc_info=True)
+        logger.error(f"Error getting Database connection: {str(e)}", exc_info=True)
+        return None
 
 def retrieve_env_values(enable_env_from_db, connection):
-    """Retrieves environment values from database or .env file."""
-    if enable_env_from_db:
+    if enable_env_from_db == 'true':
         get_values_from_db(connection)
     else:
         get_values_from_env()
 
-
 def get_values_from_db(connection):
-    """Fetches values from the database and sets them as global variables."""
-    global config_values
     cursor = connection.cursor()
     query = "SELECT env_key, env_value FROM env_info"
     cursor.execute(query)
-    config_values = {env_key: env_value for env_key, env_value in cursor}
 
-    global d_file_details_file_extensions, sensitive_patterns, is_sensitive_file_extensions
-    global enable_file_ext_count_in_scan, enable_excel_file_data_scan, enable_excel_file_data_scan_min_row, n_days
+   global config_values
+config_values = {env_key: env_value for env_key, env_value in cursor}
+global d_file_details_file_extensions
+d_file_details_file_extensions = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
+global sensitive_patterns
+sensitive_patterns = config_values.get("FILE_PATH_SCAN_SENSITIVE_PATTERNS")
+global is_sensitive_file_extensions
+is_sensitive_file_extensions = config_values.get("IS_SENSITIVE_FILE_EXTENSIONS")
+global enable_file_ext_count_in_scan
+enable_file_ext_count_in_scan = config_values.get("ENABLE_FILE_EXT_COUNT_IN_SCAN")
+global enable_excel_file_data_scan
+enable_excel_file_data_scan = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN")
+global enable_excel_file_data_scan_min_row
+enable_excel_file_data_scan_min_row = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
+global n_days
+n_days = config_values.get("N_DAYS")
 
-    d_file_details_file_extensions = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
-    sensitive_patterns = config_values.get("FILE_PATH_SCAN_SENSITIVE_PATTERNS")
-    is_sensitive_file_extensions = config_values.get("IS_SENSITIVE_FILE_EXTENSIONS")
-    enable_file_ext_count_in_scan = config_values.get("ENABLE_FILE_EXT_COUNT_IN_SCAN")
-    enable_excel_file_data_scan = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN")
-    enable_excel_file_data_scan_min_row = int(config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW"))
-    n_days = int(config_values.get("N_DAYS"))
-
-    cursor.close()
+cursor.close()
 
 def get_values_from_env():
     # Variables that can be fetched from .env
