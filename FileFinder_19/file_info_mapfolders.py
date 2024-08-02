@@ -12,11 +12,9 @@ results = []
 # Get the run date
 run_date = datetime.now().strftime("%Y-%m-%d")
 
-
 # Function to get file extension
 def get_extension(file_name):
     return file_name.split('.')[-1] if '.' in file_name else 'No Extension'
-
 
 for drive in drives:
     for root, dirs, files in os.walk(drive, topdown=True):
