@@ -68,8 +68,8 @@ def get_values_from_db(connection):
     cursor = connection.cursor()
     query = "SELECT env_key, env_value FROM env_info"
     cursor.execute(query)
-
-global config_values
+    
+    global config_values
 config_values = {env_key: env_value for env_key, env_value in cursor}
 global d_file_details_file_extensions
 d_file_details_file_extensions = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
