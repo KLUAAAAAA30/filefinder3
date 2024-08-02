@@ -4,6 +4,7 @@ from datetime import datetime
 import os
 
 from dotenv import load_dotenv
+
 load_dotenv()
 # Replace with your MySQL database configuration
 host = os.getenv("MYSQL_HOST")  # Replace with the MySQL server address
@@ -13,18 +14,14 @@ username = os.getenv("MYSQL_USERNAME")
 
 
 # Read the Excel file
-df = pd.read_excel('pc_data_info.xlsx')
+df = pd.read_excel("pc_data_info.xlsx")
 
-df_assessment = df[df['groupType'] == 'Assessment']
+df_assessment = df[df["groupType"] == "Assessment"]
 
 # Establish a MySQL database connection
-connection =  connection = mysql.connector.connect(
-                host=host,
-                port=port,
-                database=database_name,
-                user=username,
-                password=password
-            )
+connection = connection = mysql.connector.connect(
+    host=host, port=port, database=database_name, user=username, password=password
+)
 cursor = connection.cursor()
 
 # create_table_sql_starato_zone = '''
@@ -48,15 +45,15 @@ cursor = connection.cursor()
 
 # Loop through the rows of the filtered DataFrame and insert data into the database
 for index, row in df_assessment.iterrows():
-    name = row['name']
-    create_time_str = row['createDate']
-    create_time = datetime.strptime(create_time_str, '%d-%b-%Y').strftime('%Y-%m-%d')
-    ip = row['collectedIpAddress']
-    model = row['model']
-    os_name = row['osName']
-    total_processor = row['processorCount']
-    total_memory = row['memoryInMb']
-    free_memory = row['driveTotalFreeInGb']
+    name = row["name"]
+    create_time_str = row["createDate"]
+    create_time = datetime.strptime(create_time_str, "%d-%b-%Y").strftime("%Y-%m-%d")
+    ip = row["collectedIpAddress"]
+    model = row["model"]
+    os_name = row["osName"]
+    total_processor = row["processorCount"]
+    total_memory = row["memoryInMb"]
+    free_memory = row["driveTotalFreeInGb"]
 
     # Insert data into your MySQL database
     query = """
@@ -72,7 +69,16 @@ for index, row in df_assessment.iterrows():
         free_memory = VALUES(free_memory)
         """
 
-    values = (name, create_time, ip, model, os_name, total_processor, total_memory, free_memory)
+    values = (
+        name,
+        create_time,
+        ip,
+        model,
+        os_name,
+        total_processor,
+        total_memory,
+        free_memory,
+    )
 
     cursor.execute(query, values)
 
