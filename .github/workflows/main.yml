@@ -46,3 +46,9 @@ jobs:
       run: |
         psql -f SQLScripts/lisney_files_info8_bp_14Feb2024.sql
         psql -f SQLScripts/sql_Cased_Dimensions14Jan2024_v2.sql
+
+    - name: Upload CSV file as artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: file-type-counts
+        path: ./FileTypeCounts_*.csv
