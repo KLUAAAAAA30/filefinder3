@@ -4,9 +4,8 @@ from datetime import datetime
 from collections import defaultdict
 
 
-# Define the list of drives to be scanned
-# drives = ["C:/"]  # Example: Local drive
-drives = ["I:/"]  # Example: Network drive
+# Define the list of drives to be scanned (adjust as needed)
+drives = ["I:/"]
 
 # Create a dictionary to store results
 results = []
@@ -24,7 +23,7 @@ for drive in drives:
     for root, _, files in os.walk(drive, topdown=True):
         for name in files:
             file_path = os.path.join(root, name)
-            if not os.path.islink(file_path):  # Skip symbolic links
+            if not os.path.islink(file_path):
                 try:
                     file_ext = get_extension(name)
                     results.append({
@@ -36,19 +35,19 @@ for drive in drives:
                         "Drive": drive
                     })
                 except OSError:
-                    pass  # Handle errors such as permission issues silently
+                    pass  # Handle errors (permissions, etc.) silently
 
 
 # Aggregate results (more efficient approach)
 aggregated_results = defaultdict(int)
 for result in results:
-    key = (result['FileType'], result['Extension'], result['RunDate'], 
+    key = (result['FileType'], result['Extension'], result['RunDate'],
            result['ServerName'], result['Drive'])
     aggregated_results[key] += 1
 
 
-# Convert to list of dictionaries and export to CSV
-csv_file = f"C:/GT/FileTypeCounts_{run_date}.csv"  # Update with your desired path
+# Export to CSV
+csv_file = f"C:/GT/FileTypeCounts_{run_date}.csv" 
 
 with open(csv_file, 'w', newline='', encoding='utf-8') as file:
     fieldnames = ["FileType", "Extension", "Count", "RunDate", "ServerName", "Drive"]
