@@ -56,7 +56,8 @@ for result in results:
 csv_file = f"C:/GT/FileTypeCounts_{run_date}.csv"
 
 with open(csv_file, 'w', newline='', encoding='utf-8') as file:
-    fieldnames = ["FileType", "Extension", "Count", "RunDate", "ServerName", "Drive"]
+    fieldnames = ["FileType", "Extension",
+                  "Count", "RunDate", "ServerName", "Drive"]
     writer = csv.DictWriter(file, fieldnames=fieldnames)
     writer.writeheader()
 
