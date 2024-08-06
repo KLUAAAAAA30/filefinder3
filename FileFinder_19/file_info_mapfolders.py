@@ -47,7 +47,7 @@ for result in results:
 
 
 # Export to CSV
-csv_file = f"C:/GT/FileTypeCounts_{run_date}.csv" 
+csv_file = f"C:/GT/FileTypeCounts_{run_date}.csv"
 
 with open(csv_file, 'w', newline='', encoding='utf-8') as file:
     fieldnames = ["FileType", "Extension", "Count", "RunDate", "ServerName", "Drive"]
