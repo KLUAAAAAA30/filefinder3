@@ -35,6 +35,7 @@ n_days = 0
 # Remove default logger
 logger.remove()
 
+
 def create_db_connection(host, port, database_name, username, password):
     try:
         # Define your MySQL database connection details
@@ -55,14 +56,17 @@ def create_db_connection(host, port, database_name, username, password):
 
     except Exception as e:
         print(f"Error getting Database connection: {str(e)}", exc_info=True)
-        logger.error(f"Error getting Database connection: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error getting Database connection: {str(e)}", exc_info=True)
         return None
+
 
 def retrieve_env_values(enable_env_from_db, connection):
     if enable_env_from_db == 'true':
         get_values_from_db(connection)
     else:
         get_values_from_env()
+
 
 def get_values_from_db(connection):
     cursor = connection.cursor()
