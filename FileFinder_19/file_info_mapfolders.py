@@ -43,7 +43,7 @@ for drive in drives:
                     pass  # Handle errors (permissions, etc.) silently
 
 
-# Aggregate results 
+# Aggregate results
 aggregated_results = defaultdict(int)
 for result in results:
     key = (
@@ -57,10 +57,11 @@ for result in results:
 
 
 # Export to CSV
-csv_file = f"C:/GT/FileTypeCounts_{run_date}.csv" 
+csv_file = f"C:/GT/FileTypeCounts_{run_date}.csv"
 
 with open(csv_file, "w", newline="", encoding="utf-8") as file:
-    fieldnames = ["FileType", "Extension", "Count", "RunDate", "ServerName", "Drive"]
+    fieldnames = ["FileType", "Extension",
+                  "Count", "RunDate", "ServerName", "Drive"]
     writer = csv.DictWriter(file, fieldnames=fieldnames)
     writer.writeheader()
 
