@@ -7,11 +7,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MYSQL_HOST = os.getenv("DESKTOP-45002NM")
+MYSQL_HOST = os.getenv("localhost")
 MYSQL_PORT = int(os.getenv("3306"))
-MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
-MYSQL_USER = os.getenv("MYSQL_USERNAME")
-MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
+MYSQL_DATABASE = os.getenv("filefinderdb")
+MYSQL_USER = os.getenv("githubactionsuser")
+MYSQL_PASSWORD = os.getenv("root@123")
 
 df = pd.read_excel('pc_data_info.xlsx')
 df_assessment = df[df['groupType'] == 'Assessment']
