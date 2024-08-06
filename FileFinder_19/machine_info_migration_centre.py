@@ -1,6 +1,4 @@
 import os
-from datetime import datetime
-
 import mysql.connector
 import pandas as pd
 from dotenv import load_dotenv
@@ -62,8 +60,8 @@ try:
     print("Data migration completed successfully!")
 
 except mysql.connector.Error as err:
-    print(f"Something went wrong: {err}") 
-    
+    print(f"Something went wrong: {err}")
+
 finally:
     if connection.is_connected():
         cursor.close()
