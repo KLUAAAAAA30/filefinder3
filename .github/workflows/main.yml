@@ -13,42 +13,50 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r FileFinder_19/requirements.txt
-        pip install flake8  # Install flake8
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r FileFinder_19/requirements.txt
+          pip install flake8
 
-    - name: Lint with flake8
-      run: flake8 .  # Run flake8 for linting
+      - name: Lint with flake8
+        run: flake8 .
 
-    - name: Run Scripts
-      run: |
-        python FileFinder_19/file_info_mapfolders.py
-        python FileFinder_19/file_info_version_22.py
-        python FileFinder_19/machine_info_migration_centre.py
+      # --- Run Python Scripts (Combined) ---
+      - name: Run Python Scripts
+        run: |
+          python FileFinder_19/file_info_mapfolders.py
+          python FileFinder_19/file_info_version_22.py
+          python FileFinder_19/machine_info_migration_centre.py
 
-    - name: Run PowerShell Script
-      run: pwsh PowerShell/PS__ArunV2_Final_8Feb2024.ps1
+      - name: Run PowerShell Script
+        run: pwsh PowerShell/PS__ArunV2_Final_8Feb2024.ps1
 
-    - name: Install PostgreSQL
-      run: choco install postgresql
+      # --- MySQL Setup and Script Execution ---
+      - name: Install MySQL Client 
+        run: choco install mysql
 
-    - name: Run SQL Scripts
-      run: |
-        psql -f SQLScripts/lisney_files_info8_bp_14Feb2024.sql
-        psql -f SQLScripts/sql_Cased_Dimensions14Jan2024_v2.sql
+      - name: Run SQL Scripts
+        run: |
+          mysql -h ${{ secrets.MYSQL_HOST }} -P ${{ secrets.MYSQL_PORT }} \
+          -u ${{ secrets.MYSQL_USER }} -p${{ secrets.MYSQL_PASSWORD }} \
+          ${{ secrets.MYSQL_DATABASE }} < SQLScripts/lisney_files_info8_bp_14Feb2024.sql
+          
+          mysql -h ${{ secrets.MYSQL_HOST }} -P ${{ secrets.MYSQL_PORT }} \
+          -u ${{ secrets.MYSQL_USER }} -p${{ secrets.MYSQL_PASSWORD }} \
+          ${{ secrets.MYSQL_DATABASE }} < SQLScripts/sql_Cased_Dimensions14Jan2024_v2.sql
+          
 
-    - name: Upload CSV file as artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: file-type-counts
-        path: ./FileTypeCounts_*.csv
+      - name: Upload CSV file as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: file-type-counts
+          path: ./FileTypeCounts_*.csv
