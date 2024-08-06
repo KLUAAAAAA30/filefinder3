@@ -16,11 +16,11 @@ df = pd.read_excel('pc_data_info.xlsx')
 df_assessment = df[df['groupType'] == 'Assessment']
 
 connection = mysql.connector.connect(
-    host=MYSQL_HOST,
-    port=MYSQL_PORT,
-    database=MYSQL_DATABASE,
-    user=MYSQL_USER,
-    password=MYSQL_PASSWORD
+    host=MYSQL_HOST,
+    port=MYSQL_PORT,
+    database=MYSQL_DATABASE,
+    user=MYSQL_USER,
+    password=MYSQL_PASSWORD
 )
 cursor = connection.cursor()
 
@@ -36,14 +36,14 @@ ON DUPLICATE KEY UPDATE
 """
 
 for _, row in df_assessment.iterrows():
-    name = row['name']
-    create_time = datetime.strptime(row['createDate'], '%d-%b-%Y').strftime('%Y-%m-%d')
-    ip, model, os_name = row['collectedIpAddress'], row['model'], row['osName']
-    total_processor, total_memory, free_memory = row['processorCount'], row['memoryInMb'], row['driveTotalFreeInGb'] 
+        name = row['name']
+        create_time = datetime.strptime(row['createDate'], '%d-%b-%Y').strftime('%Y-%m-%d')
+        ip, model, os_name = row['collectedIpAddress'], row['model'], row['osName']
+        total_processor, total_memory, free_memory = row['processorCount'], row['memoryInMb'], row['driveTotalFreeInGb'] 
 
-    values = (name, create_time, ip, model, os_name, 
-              total_processor, total_memory, free_memory)
-    cursor.execute(insert_query, values)
+        values = (name, create_time, ip, model, os_name, 
+                  total_processor, total_memory, free_memory)
+        cursor.execute(insert_query, values)
 
 connection.commit()
 cursor.close()
