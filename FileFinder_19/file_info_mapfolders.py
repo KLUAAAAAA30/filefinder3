@@ -13,6 +13,7 @@ results = []
 # Get the run date
 run_date = datetime.now().strftime("%Y-%m-%d")
 
+
 # Function to get file extension
 def get_extension(file_name):
     return file_name.split('.')[-1] if '.' in file_name else 'No Extension'
@@ -41,8 +42,13 @@ for drive in drives:
 # Aggregate results (more efficient approach)
 aggregated_results = defaultdict(int)
 for result in results:
-    key = (result['FileType'], result['Extension'], result['RunDate'],
-           result['ServerName'], result['Drive'])
+    key = (
+        result['FileType'],
+        result['Extension'],
+        result['RunDate'],
+        result['ServerName'],
+        result['Drive']
+    )
     aggregated_results[key] += 1
 
 
