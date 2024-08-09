@@ -75,8 +75,6 @@ def get_values_from_db(connection):
 
     global config_values
     config_values = {env_key: env_value for env_key, env_value in cursor}
-
-    # Extract values from config_values
     global d_file_details_file_extensions
     d_file_details_file_extensions = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
     global sensitive_patterns
