@@ -35,7 +35,6 @@ n_days = 0
 # Remove default logger
 logger.remove()
 
-
 def create_db_connection(host, port, database_name, username, password):
     try:
         # Define your MySQL database connection details
@@ -56,17 +55,14 @@ def create_db_connection(host, port, database_name, username, password):
 
     except Exception as e:
         print(f"Error getting Database connection: {str(e)}", exc_info=True)
-        logger.error(
-            f"Error getting Database connection: {str(e)}", exc_info=True)
+        logger.error(f"Error getting Database connection: {str(e)}", exc_info=True)
         return None
-
 
 def retrieve_env_values(enable_env_from_db, connection):
     if enable_env_from_db == 'true':
         get_values_from_db(connection)
     else:
         get_values_from_env()
-
 
 def get_values_from_db(connection):
     cursor = connection.cursor()
@@ -92,7 +88,6 @@ def get_values_from_db(connection):
 
     cursor.close()
 
-
 def get_values_from_env():
     # Variables that can be fetched from .env
     # Define the list of file extensions to search for
@@ -115,7 +110,6 @@ def get_values_from_env():
     enable_excel_file_data_scan_min_row = os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
     global n_days
     n_days = int(os.getenv("N_DAYS"))
-
 
 def get_ip_address():
     """
@@ -157,7 +151,6 @@ def get_ip_address():
         logger.error(f"Error getting IP address: {str(e)}")
         return None
 
-
 def get_removable_drives():
     """
     This is a function that checks for the modified days of a file.
@@ -187,7 +180,6 @@ def get_removable_drives():
 
     return removable_drives
 
-
 def get_drives():
     all_drives = []
     try:
@@ -200,7 +192,6 @@ def get_drives():
         # Log the error to the log file
         logger.error(f"Error retrieving drive information: {str(e)}", exc_info=True)
         return None
-
 
 # Define a custom exception class for file-related errors
 class FileError(Exception):
