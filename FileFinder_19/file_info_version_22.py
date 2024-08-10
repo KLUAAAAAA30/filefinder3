@@ -35,6 +35,7 @@ n_days = 0
 # Remove default logger
 logger.remove()
 
+
 def create_db_connection(host, port, database_name, username, password):
     try:
         # Define your MySQL database connection details
@@ -55,8 +56,10 @@ def create_db_connection(host, port, database_name, username, password):
 
     except Exception as e:
         print(f"Error getting Database connection: {str(e)}", exc_info=True)
-        logger.error(f"Error getting Database connection: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error getting Database connection: {str(e)}", exc_info=True)
         return None
+
 
 def retrieve_env_values(enable_env_from_db, connection):
     if enable_env_from_db == 'true':
@@ -64,29 +67,31 @@ def retrieve_env_values(enable_env_from_db, connection):
     else:
         get_values_from_env()
 
+
 def get_values_from_db(connection):
     cursor = connection.cursor()
     query = "SELECT env_key, env_value FROM env_info"
     cursor.execute(query)
 
-    global config_values
-    config_values = {env_key: env_value for env_key, env_value in cursor}
-    global d_file_details_file_extensions
-    d_file_details_file_extensions = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
-    global sensitive_patterns
-    sensitive_patterns = config_values.get("FILE_PATH_SCAN_SENSITIVE_PATTERNS")
-    global is_sensitive_file_extensions
-    is_sensitive_file_extensions = config_values.get("IS_SENSITIVE_FILE_EXTENSIONS")
-    global enable_file_ext_count_in_scan
-    enable_file_ext_count_in_scan = config_values.get("ENABLE_FILE_EXT_COUNT_IN_SCAN")
-    global enable_excel_file_data_scan
-    enable_excel_file_data_scan = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN")
-    global enable_excel_file_data_scan_min_row
-    enable_excel_file_data_scan_min_row = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
-    global n_days
-    n_days = config_values.get("N_DAYS")
+   global config_values
+config_values = {env_key: env_value for env_key, env_value in cursor}
+global d_file_details_file_extensions
+d_file_details_file_extensions = config_values.get("D_FILE_DETAILS_FILE_EXTENSIONS")
+global sensitive_patterns
+sensitive_patterns = config_values.get("FILE_PATH_SCAN_SENSITIVE_PATTERNS")
+global is_sensitive_file_extensions
+is_sensitive_file_extensions = config_values.get("IS_SENSITIVE_FILE_EXTENSIONS")
+global enable_file_ext_count_in_scan
+enable_file_ext_count_in_scan = config_values.get("ENABLE_FILE_EXT_COUNT_IN_SCAN")
+global enable_excel_file_data_scan
+enable_excel_file_data_scan = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN")
+global enable_excel_file_data_scan_min_row
+enable_excel_file_data_scan_min_row = config_values.get("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
+global n_days
+n_days = config_values.get("N_DAYS")
 
-    cursor.close()
+cursor.close()
+
 
 def get_values_from_env():
     # Variables that can be fetched from .env
@@ -110,6 +115,7 @@ def get_values_from_env():
     enable_excel_file_data_scan_min_row = os.getenv("ENABLE_EXCEL_FILE_DATA_SCAN_MIN_ROW")
     global n_days
     n_days = int(os.getenv("N_DAYS"))
+
 
 def get_ip_address():
     """
@@ -151,6 +157,7 @@ def get_ip_address():
         logger.error(f"Error getting IP address: {str(e)}")
         return None
 
+
 def get_removable_drives():
     """
     This is a function that checks for the modified days of a file.
@@ -180,6 +187,7 @@ def get_removable_drives():
 
     return removable_drives
 
+
 def get_drives():
     all_drives = []
     try:
@@ -192,6 +200,7 @@ def get_drives():
         # Log the error to the log file
         logger.error(f"Error retrieving drive information: {str(e)}", exc_info=True)
         return None
+
 
 # Define a custom exception class for file-related errors
 class FileError(Exception):
@@ -1075,3 +1084,4 @@ if __name__ == "__main__":
         connection.close()
         while keyboard.is_pressed('Esc') == False:
             pass
+        
