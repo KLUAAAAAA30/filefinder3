@@ -1318,6 +1318,8 @@ if __name__ == "__main__":
     print(f"username: {username}")
     print(f"password: {password}")
 
+    employee_username = os.getenv("EMPLOYEE_USERNAME", None)
+    if not employee_username:
     employee_username = input("Enter your Employee username: ")
     scan_choices = ["File Count", "File Data Scan"]
     scan = select("Select the type of scan:", choices=scan_choices).ask()
