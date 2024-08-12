@@ -12,7 +12,7 @@ MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
 MYSQL_USER = os.getenv("MYSQL_USERNAME")
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
 
-df = pd.read_excel('pc_data_info.xlsx')
+df = pd.read_excel('FileFinder_19/pc_data_info.xlsx')
 df_assessment = df[df['groupType'] == 'Assessment']
 
 try:
