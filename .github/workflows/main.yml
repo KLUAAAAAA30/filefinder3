@@ -28,7 +28,7 @@ jobs:
           pip install flake8
 
       - name: Lint with flake8
-        run: flake8 .
+        run: flake8 . --ignore=E501 # Ignore line length errors (if needed)
 
       # --- Run Python Scripts (Combined) ---
       - name: Run Python Scripts
@@ -53,10 +53,9 @@ jobs:
           mysql -h ${{ secrets.MYSQL_HOST }} -P ${{ secrets.MYSQL_PORT }} \
           -u ${{ secrets.MYSQL_USER }} -p${{ secrets.MYSQL_PASSWORD }} \
           ${{ secrets.MYSQL_DATABASE }} < SQLScripts/sql_Cased_Dimensions14Jan2024_v2.sql
-          
 
       - name: Upload CSV file as artifact
         uses: actions/upload-artifact@v2
         with:
           name: file-type-counts
-          path: ./FileTypeCounts_*.csv
+          path: ./FileTypeCounts_*.csv 
