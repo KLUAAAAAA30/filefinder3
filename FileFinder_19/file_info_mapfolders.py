@@ -59,6 +59,7 @@ for result in results:
 # Export to CSV
 csv_file = f"C:/GT/FileTypeCounts_{run_date}.csv"
 
+os.makedirs(os.path.dirname(csv_file), exist_ok=True)
 with open(csv_file, "w", newline="", encoding="utf-8") as file:
     fieldnames = ["FileType", "Extension",
                   "Count", "RunDate", "ServerName", "Drive"]
