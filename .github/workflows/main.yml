@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD Workflow
 
 on:
   push:
@@ -9,50 +9,43 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-test:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r FileFinder_19/requirements.txt
-          # Removed flake8 installation
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install python-dotenv
 
-      # --- Run Python Scripts (Combined) ---
-      - name: Run Python Scripts
-        run: |
-          python FileFinder_19/file_info_mapfolders.py
-          python FileFinder_19/file_info_version_22.py
-          python FileFinder_19/machine_info_migration_centre.py
+    - name: Load environment variables
+      run: |
+        # Load environment variables from .env
+        python -c "import os; from dotenv import load_dotenv; load_dotenv('.env'); print(os.environ.get('MYSQL_ROOT_PASSWORD'))"
 
-      - name: Run PowerShell Script
-        run: pwsh PowerShell/PS__ArunV2_Final_8Feb2024.ps1
+    - name: Set up MySQL
+      run: |
+        # Use the environment variables loaded by the previous step
+        mysql -u root -p${{ secrets.MYSQL_ROOT_PASSWORD }} < SQLScripts/lisney_files_info8_bp_14Feb2024.sql
+        mysql -u root -p${{ secrets.MYSQL_ROOT_PASSWORD }} < SQLScripts/sql_Cased_Dimensions14Jan2024_v2.sql
 
-      # --- MySQL Setup and Script Execution ---
-      - name: Install MySQL Client 
-        run: choco install mysql
+    - name: Run Python scripts
+      run: |
+        python FileFinder_19/file_info_mapfolders.py
+        python FileFinder_19/file_info_version_22.py
+        python FileFinder_19/machine_info_migration_centre.py
 
-      - name: Run SQL Scripts
-        run: |
-          mysql -h ${{ secrets.MYSQL_HOST }} -P ${{ secrets.MYSQL_PORT }} \
-          -u ${{ secrets.MYSQL_USER }} -p${{ secrets.MYSQL_PASSWORD }} \
-          ${{ secrets.MYSQL_DATABASE }} < SQLScripts/lisney_files_info8_bp_14Feb2024.sql
-          
-          mysql -h ${{ secrets.MYSQL_HOST }} -P ${{ secrets.MYSQL_PORT }} \
-          -u ${{ secrets.MYSQL_USER }} -p${{ secrets.MYSQL_PASSWORD }} \
-          ${{ secrets.MYSQL_DATABASE }} < SQLScripts/sql_Cased_Dimensions14Jan2024_v2.sql
-
-      - name: Upload CSV file as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: file-type-counts
-          path: ./FileTypeCounts_*.csv 
+    - name: Run PowerShell script (optional)
+      if: runner.os == 'Windows'
+      run: |
+        pwsh -File PowerShell/PS__ArunV2_Final_8Feb2024.ps1
+      shell: pwsh
