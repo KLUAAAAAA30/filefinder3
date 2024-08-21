@@ -33,10 +33,12 @@ jobs:
         python -c "import os; from dotenv import load_dotenv; load_dotenv('.env'); print(os.environ.get('MYSQL_ROOT_PASSWORD'))"
 
     - name: Set up MySQL
+      shell: pwsh
       run: |
-        # Use the environment variables loaded by the previous step
-        mysql -u root -p${{ secrets.MYSQL_ROOT_PASSWORD }} < SQLScripts/lisney_files_info8_bp_14Feb2024.sql
-        mysql -u root -p${{ secrets.MYSQL_ROOT_PASSWORD }} < SQLScripts/sql_Cased_Dimensions14Jan2024_v2.sql
+        # Execute MySQL setup scripts using PowerShell
+        $mysqlPassword = $env:MYSQL_ROOT_PASSWORD
+        & mysql -u root -p$mysqlPassword < SQLScripts/lisney_files_info8_bp_14Feb2024.sql
+        & mysql -u root -p$mysqlPassword < SQLScripts/sql_Cased_Dimensions14Jan2024_v2.sql
 
     - name: Run Python scripts
       run: |
@@ -46,6 +48,6 @@ jobs:
 
     - name: Run PowerShell script (optional)
       if: runner.os == 'Windows'
+      shell: pwsh
       run: |
         pwsh -File PowerShell/PS__ArunV2_Final_8Feb2024.ps1
-      shell: pwsh
